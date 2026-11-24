@@ -8,7 +8,7 @@ It is a local desktop app written in Rust with egui. The folder can be on this c
 
 ## Using it
 
-- **File › Open diary folder…** opens a folder as a diary. An empty folder starts a new one; DiaryCraft adds a small `.diarycraft/config.json` with the format version and nothing else.
+- At the first start DiaryCraft suggests a `DiaryCraft` folder in your Documents folder (on Windows the Documents known folder, also when OneDrive redirects it); **Use this folder** creates it, **Choose another folder…** picks any other. **File › Open diary folder…** opens another diary later. An empty folder starts a new one; DiaryCraft adds a small `.diarycraft/config.json` with the format version and nothing else.
 - The calendar on the left shows the month, with the days that have an entry highlighted. Click a day to read or write it; **Today** goes back to today.
 - Under the calendar are the latest entries, or the results of the search box at the top: every word typed must appear in the entry, ignoring case.
 - What you write is saved one second after you stop typing, when you move to another day and when you close the app. A day with nothing written creates no file.

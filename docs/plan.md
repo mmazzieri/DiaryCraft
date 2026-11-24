@@ -39,7 +39,7 @@ xtask/          ci, packaging
 
 ## Formato su disco
 
-- Cartella radice scelta dall'utente. Una voce: `AAAA/MM/AAAA-MM-GG.md`, Markdown in UTF-8. Il nome con la data intera rende il file riconoscibile anche fuori dalla sua cartella.
+- Cartella radice scelta dall'utente. Al primo avvio DiaryCraft propone `DiaryCraft` dentro la cartella Documenti (su Windows quella indicata dal registro, anche se OneDrive l'ha spostata; su Linux quella delle directory utente XDG; su macOS `~/Documents`), con «Usa questa cartella» e «Scegli un'altra cartella…» (decisione di Mauro, 24/11/2026). Una voce: `AAAA/MM/AAAA-MM-GG.md`, Markdown in UTF-8. Il nome con la data intera rende il file riconoscibile anche fuori dalla sua cartella.
 - Il file è solo testo. Metadati facoltativi (luogo, umore, etichette) in un front matter YAML minimo in testa al file, che l'app conserva anche quando contiene chiavi che non conosce.
 - Allegati: cartella `AAAA/MM/AAAA-MM-GG/` accanto alla voce; l'app li elenca e li apre con il programma di sistema, e li inserisce nel testo come link relativi Markdown.
 - Impostazioni del diario in `.diarycraft/config.json` nella radice (versione del formato, lingua del calendario, primo giorno della settimana), così sono uguali su ogni computer che apre la cartella. Le impostazioni della finestra restano sul computer.

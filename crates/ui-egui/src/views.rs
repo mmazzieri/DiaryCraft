@@ -1,6 +1,7 @@
 //! Drawing: the top bar, the calendar and the lists beside it, the page, the status bar.
 
 use crate::app::{Action, DiaryCraftApp, today};
+use crate::folders::suggested_diary as suggested_folder;
 use crate::i18n::Lang;
 use chrono::Datelike;
 use diarycraft_engine::calendar::{add_months, month_grid};
@@ -171,9 +172,17 @@ pub fn empty(ui: &mut egui::Ui, app: &mut DiaryCraftApp) {
         ui.set_max_width(520.0);
         ui.label(s.empty_body);
         ui.add_space(12.0);
-        if ui.button(s.open_diary).clicked() {
+        if let Some(folder) = suggested_folder() {
+            ui.label(egui::RichText::new(folder.display().to_string()).monospace());
+            if ui.button(egui::RichText::new(s.use_suggested).strong()).clicked() {
+                app.actions.push(Action::Create(folder));
+            }
+            ui.add_space(4.0);
+        }
+        if ui.button(s.choose_other).clicked() {
             app.actions.push(Action::OpenDialog);
         }
+        ui.add_space(12.0);
         for p in app.prefs.recent.clone() {
             if ui.link(p.display().to_string()).clicked() {
                 app.actions.push(Action::Open(p));

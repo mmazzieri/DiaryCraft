@@ -54,6 +54,8 @@ pub enum Action {
     Select(NaiveDate),
     ShowMonth(NaiveDate),
     OpenDialog,
+    /// Creates the folder if needed and opens it as a diary.
+    Create(PathBuf),
     Open(PathBuf),
     CloseDiary,
     Attach,
@@ -333,10 +335,18 @@ impl DiaryCraftApp {
                 Action::Select(date) => self.select(date),
                 Action::ShowMonth(date) => self.month = diarycraft_engine::calendar::month_start(date),
                 Action::OpenDialog => {
-                    if let Some(p) = rfd::FileDialog::new().pick_folder() {
+                    let mut dialog = rfd::FileDialog::new();
+                    if let Some(start) = crate::folders::documents() {
+                        dialog = dialog.set_directory(start);
+                    }
+                    if let Some(p) = dialog.pick_folder() {
                         self.open(&p);
                     }
                 }
+                Action::Create(p) => match std::fs::create_dir_all(&p) {
+                    Ok(()) => self.open(&p),
+                    Err(e) => self.error = Some(format!("{}: {e}", p.display())),
+                },
                 Action::Open(p) => self.open(&p),
                 Action::CloseDiary => self.close_diary(),
                 Action::Attach => self.attach(),

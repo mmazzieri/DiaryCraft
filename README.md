@@ -14,7 +14,7 @@ It is a local desktop app written in Rust with egui. The folder can be on this c
 - What you write is saved one second after you stop typing, when you move to another day and when you close the app. A day with nothing written creates no file.
 - **Attach file…** copies files into the day's attachments folder (`2026/11/2026-11-24/`) and adds a link to them in the text.
 - Entries from the 2014 LogBook (`year/month/DD.txt` or `year/month/YYYYMMDD.txt`, also in Windows-1252) are read and written back in place.
-- Italian and English, from **File › Language**.
+- Italian and English: the language of the system at first (on Windows and macOS the language of the user interface, elsewhere `LC_ALL`, `LC_MESSAGES` or `LANG`), or the one chosen in **File › Language**.
 
 ## Your text is never lost
 

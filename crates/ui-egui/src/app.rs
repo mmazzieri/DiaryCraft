@@ -86,6 +86,8 @@ pub struct DiaryCraftApp {
     last_scan: f64,
     /// Fingerprint of the file the page shows, as last seen on disk; avoids re-reading it every poll.
     seen: Option<Option<Fingerprint>>,
+    /// The system's language, read once at start.
+    system_lang: Lang,
 }
 
 pub fn today() -> NaiveDate {
@@ -123,6 +125,7 @@ impl DiaryCraftApp {
             last_poll: 0.0,
             last_scan: 0.0,
             seen: None,
+            system_lang: Lang::from_system(),
         };
         if let Some(path) = open.or_else(|| app.prefs.last.clone()) {
             app.open(&path);
@@ -131,7 +134,12 @@ impl DiaryCraftApp {
     }
 
     pub fn strings(&self) -> &'static Strings {
-        self.prefs.lang.unwrap_or_else(Lang::from_env).strings()
+        self.lang().strings()
+    }
+
+    /// The language chosen in File › Language, or else the system's.
+    pub fn lang(&self) -> Lang {
+        self.prefs.lang.unwrap_or(self.system_lang)
     }
 
     fn open(&mut self, path: &Path) {
@@ -150,7 +158,7 @@ impl DiaryCraftApp {
                 self.refresh_recent();
                 self.select(today());
             }
-            Err(e) => self.error = Some(e.to_string()),
+            Err(e) => self.error = Some(self.lang().describe(&e)),
         }
     }
 
@@ -180,7 +188,7 @@ impl DiaryCraftApp {
                 self.page = Some(Page { text: loaded.text.clone(), loaded, attachments });
                 self.dirty_since = None;
             }
-            Err(e) => self.error = Some(e.to_string()),
+            Err(e) => self.error = Some(self.lang().describe(&e)),
         }
     }
 
@@ -207,7 +215,7 @@ impl DiaryCraftApp {
                 self.conflict = Some(Conflict { copy, disk_text: disk.text.clone(), disk, comparing: false });
                 self.dirty_since = None;
             }
-            Err(e) => self.error = Some(e.to_string()),
+            Err(e) => self.error = Some(self.lang().describe(&e)),
         }
         self.refresh_recent();
     }
@@ -239,7 +247,7 @@ impl DiaryCraftApp {
         if disk.base != page.loaded.base {
             page.text = disk.text.clone();
             page.loaded = disk;
-            let s = self.prefs.lang.unwrap_or_else(Lang::from_env).strings();
+            let s = self.prefs.lang.unwrap_or(self.system_lang).strings();
             self.notice = Some((s.reloaded.to_owned(), 0.0));
         }
     }
@@ -257,7 +265,7 @@ impl DiaryCraftApp {
             if let Some(diary) = &mut self.diary
                 && let Err(e) = diary.scan()
             {
-                self.error = Some(e.to_string());
+                self.error = Some(self.lang().describe(&e));
             }
             self.refresh_recent();
         }
@@ -286,6 +294,7 @@ impl DiaryCraftApp {
     }
 
     fn attach(&mut self) {
+        let lang = self.lang();
         let (Some(diary), Some(page)) = (&self.diary, &mut self.page) else { return };
         let Some(files) = rfd::FileDialog::new().pick_files() else { return };
         let date = page.loaded.date;
@@ -302,7 +311,7 @@ impl DiaryCraftApp {
                     page.text.push('\n');
                     self.dirty_since = Some(0.0);
                 }
-                Err(e) => self.error = Some(e.to_string()),
+                Err(e) => self.error = Some(lang.describe(&e)),
             }
         }
         page.attachments = diary.attachments(date);

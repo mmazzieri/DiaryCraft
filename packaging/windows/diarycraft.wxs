@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DiaryCraft MSI (WiX Toolset v5: the .NET tool "wix", version 5.0.2). Built by
+  package.ps1:
+
+    wix build diarycraft.wxs -arch x64 -d Version=1.2.3 -d BinDir=... -d IconPath=... -o out.msi
+
+  Dual scope: for everyone on the computer (ALLUSERS=1, into Program Files\DiaryCraft) or for
+  the current user only (ALLUSERS=2 MSIINSTALLPERUSER=1, into %LOCALAPPDATA%\Programs), which is
+  what the ArtCraft Launcher asks for. INSTALLFOLDER can be given on the command line. Installs a
+  Start menu shortcut. No setup wizard: the package has nothing
+  to choose and no licence to accept (MIT OR Apache-2.0).
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+      Name="DiaryCraft"
+      Manufacturer="Mauro Mazzieri"
+      Version="$(var.Version)"
+      UpgradeCode="7C3F609A-64AD-4075-9EBF-B409478B8DC7"
+      Scope="perUserOrMachine"
+      Compressed="yes"
+      Language="1033">
+    <SummaryInformation Description="DiaryCraft: a diary kept as one text file per day" Manufacturer="Mauro Mazzieri" />
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+        DowngradeErrorMessage="A newer version of DiaryCraft is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="DiaryCraftIcon.exe" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="DiaryCraftIcon.exe" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/mmazzieri/DiaryCraft" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/mmazzieri/DiaryCraft/releases" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="DiaryCraft" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <Feature Id="Main" Title="DiaryCraft" Level="1">
+      <ComponentGroupRef Id="DiaryCraftFiles" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="DiaryCraftFiles">
+      <Component Id="DiaryCraftApp" Directory="INSTALLFOLDER" Guid="48F38027-700C-4CAD-9CA7-34AE2BA72019">
+        <File Id="DiaryCraftExe" Source="$(var.BinDir)\diarycraft.exe" KeyPath="yes" />
+        <File Id="DiaryCraftNotice" Source="$(var.BinDir)\NOTICE" />
+        <File Id="DiaryCraftLicenseMit" Source="$(var.BinDir)\LICENSE-MIT" />
+        <File Id="DiaryCraftLicenseApache" Source="$(var.BinDir)\LICENSE-APACHE" />
+        <File Id="DiaryCraftAttribution" Source="$(var.BinDir)\ATTRIBUTION.md" />
+        <File Id="DiaryCraftThirdParty" Source="$(var.BinDir)\THIRD-PARTY-LICENSES.txt" />
+        <!-- Win+R "diarycraft". -->
+        <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\diarycraft.exe" Value="[#DiaryCraftExe]" Type="string" />
+      </Component>
+      <Component Id="DiaryCraftShortcut" Directory="ProgramMenuFolder" Guid="65EE4A2A-1052-4F81-A4A7-8CFED27AB32D">
+        <Shortcut Id="StartMenuShortcut" Name="DiaryCraft" Description="A diary kept as one text file per day"
+            Target="[#DiaryCraftExe]" WorkingDirectory="INSTALLFOLDER" Icon="DiaryCraftIcon.exe">
+          <ShortcutProperty Key="System.AppUserModel.ID" Value="it.mauromazzieri.diarycraft" />
+        </Shortcut>
+        <RegistryValue Root="HKMU" Key="Software\Mauro Mazzieri\DiaryCraft" Name="StartMenuShortcut" Value="1" Type="integer" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

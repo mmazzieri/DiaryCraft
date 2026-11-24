@@ -709,7 +709,7 @@ checksum = "f27ae1dd37df86211c42e150270f82743308803d90a6f6e6651cd730d5e1732f"
 
 [[package]]
 name = "diarycraft"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "diarycraft-ui-egui",
  "eframe",
@@ -718,7 +718,7 @@ dependencies = [
 
 [[package]]
 name = "diarycraft-engine"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "diarycraft-model",
@@ -726,7 +726,7 @@ dependencies = [
 
 [[package]]
 name = "diarycraft-file"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "diarycraft-engine",
@@ -740,7 +740,7 @@ dependencies = [
 
 [[package]]
 name = "diarycraft-model"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "serde",
@@ -749,7 +749,7 @@ dependencies = [
 
 [[package]]
 name = "diarycraft-ui-egui"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "diarycraft-engine",
@@ -3940,7 +3940,7 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 
 [[package]]
 name = "xtask"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "zbus"

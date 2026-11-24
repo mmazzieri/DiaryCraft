@@ -31,3 +31,4 @@ Fonts bundled in the app through `epaint_default_fonts` 0.37 (egui's `default_fo
 
 The license texts ship with the crate (`fonts/UFL.txt`, `fonts/OFL.txt`, `fonts/Hack-Regular.txt`, `fonts/emoji-icon-font-mit-license.txt`, `fonts/egui-icons.txt`). They are collected, unchanged, in [`THIRD-PARTY-LICENSES.txt`](THIRD-PARTY-LICENSES.txt), which every release package carries together with this file, `NOTICE` and the two license texts.
 
+The app icon (a notebook page with a bookmark on a blue tile, `assets/app-icon/`) is original work drawn for DiaryCraft by `tools/icons.py` and released under MIT OR Apache-2.0 like the code. The packaging scripts in `packaging/` are adapted from `storytold/craft-launcher` (MIT OR Apache-2.0), as their headers say.

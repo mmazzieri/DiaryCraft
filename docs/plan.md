@@ -78,6 +78,14 @@ Proposta: riusare `mmazzieri/LogBook`. Mauro lo rinomina in `DiaryCraft` dalle i
 6. Pacchetti per Windows, macOS e Linux come BalanceCraft; candidatura al launcher.
 7. Seconda fase: Kimbro.
 
+## Identità (fisse dopo l'ingresso nel launcher)
+
+Id e binario `diarycraft`; bundle id, flatpak id e `startup_wm_class` `it.mauromazzieri.diarycraft`; pacchetti deb e rpm `diarycraft`; publisher MSI «Mauro Mazzieri»; UpgradeCode MSI `7C3F609A-64AD-4075-9EBF-B409478B8DC7`, mai da cambiare. DiaryCraft apre una cartella e non un file, quindi non registra tipi di file né estensioni.
+
+## Pacchetti (0.2)
+
+Icona originale (una pagina di quaderno con un segnalibro su fondo blu) disegnata da `tools/icons.py`. `packaging/` e `.github/workflows/release.yml` ripresi da BalanceCraft: MSI (WiX v5, per utente o per macchina) e zip portabile per Windows, DMG universale per macOS (firmato e notarizzato quando ci sono i secret), deb, rpm e tar.gz per Linux x86_64 e aarch64; nessun AppImage. Al tag `v*` una release in bozza con `SHA256SUMS.txt`, che Mauro pubblica.
+
 ## Domande per Mauro
 
 - Repository: va bene riusare LogBook rinominato, o Mauro preferisce un repository nuovo?

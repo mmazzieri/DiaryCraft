@@ -227,7 +227,7 @@ impl Session {
             self.check(dir, Access::Write)?;
         }
         Ok(match self.diary.save(loaded, text, &ctx.label, &ctx.stamp)? {
-            Saved::Written { base } => json!({"date": loaded.date, "saved": true, "version": base.to_hex()}),
+            Saved::Written { base, .. } => json!({"date": loaded.date, "saved": true, "version": base.to_hex()}),
             Saved::Skipped => json!({"date": loaded.date, "saved": false, "reason": "blank text, no entry created"}),
             Saved::Conflict { copy, disk } => json!({
                 "date": loaded.date,

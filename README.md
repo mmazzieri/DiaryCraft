@@ -4,7 +4,23 @@ DiaryCraft is a diary that keeps each day as a plain text file. You choose a fol
 
 It is a local desktop app written in Rust with egui. The folder can be on this computer, on a shared drive, or in a folder synced by OneDrive, Google Drive, Dropbox or Syncthing to write from several computers.
 
-> **Status:** 0.1, in development. The plan is in [docs/plan.md](docs/plan.md) (in Italian).
+> **Status:** 0.2, in development. The plan is in [docs/plan.md](docs/plan.md) (in Italian).
+
+## Install
+
+Each [release](https://github.com/mmazzieri/DiaryCraft/releases) has these files, listed with their checksums in `SHA256SUMS.txt`:
+
+| System | File |
+|---|---|
+| Windows 10 and 11, x64 | `diarycraft-<version>-windows-x64.msi` (installer) or `-windows-x64-portable.zip` |
+| macOS 11 or newer, Intel and Apple silicon | `diarycraft-<version>-macos-universal.dmg` |
+| Debian, Ubuntu and derivatives | `diarycraft-<version>-linux-<arch>.deb` |
+| Fedora, openSUSE, RHEL | `diarycraft-<version>-linux-<arch>.rpm` |
+| Any Linux with glibc 2.35 or newer | `diarycraft-<version>-linux-<arch>.tar.gz` |
+
+`<arch>` is `x86_64` or `aarch64`. The MSI installs for the current user or for every user of the computer and adds DiaryCraft to the Start menu; the Linux packages add it to the applications menu. The Windows files are not signed yet, so SmartScreen may ask for a confirmation the first time.
+
+On macOS, drag DiaryCraft to Applications. Until a release is signed with a Developer ID and notarized, macOS blocks it the first time because it cannot check it. On macOS 15 or newer, open it once, close the warning, then go to **System Settings › Privacy & Security** and choose **Open Anyway** next to DiaryCraft; on older versions, right-click it, choose **Open** and confirm. From Terminal, `xattr -dr com.apple.quarantine /Applications/DiaryCraft.app` does the same.
 
 ## Using it
 
@@ -26,6 +42,8 @@ Every save goes to a temporary file that is then renamed over the entry, so a cr
 cargo run --release -p diarycraft -- path/to/diary
 cargo xtask ci   # fmt, clippy -D warnings, tests
 ```
+
+The packages are built by `packaging/linux/package.sh`, `packaging/macos/package.sh` and `packaging/windows/package.ps1`, and by the Release workflow for every pull request that touches them; a tag `vX.Y.Z` opens a draft release with all of them. The app icon is drawn by `tools/icons.py` (Pillow).
 
 ## License
 

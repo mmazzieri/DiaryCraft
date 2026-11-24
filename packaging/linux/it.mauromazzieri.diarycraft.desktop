@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=DiaryCraft
+GenericName=Diary
+GenericName[it]=Diario
+Comment=A diary kept as one text file per day
+Comment[it]=Un diario tenuto come un file di testo per ogni giorno
+Exec=diarycraft
+TryExec=diarycraft
+Icon=it.mauromazzieri.diarycraft
+Terminal=false
+StartupNotify=true
+StartupWMClass=it.mauromazzieri.diarycraft
+Categories=Office;Utility;
+Keywords=diary;journal;log;notes;diario;giornale;note;

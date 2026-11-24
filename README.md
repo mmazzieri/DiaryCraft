@@ -29,12 +29,13 @@ On macOS, drag DiaryCraft to Applications. Until a release is signed with a Deve
 - Under the calendar are the latest entries, or the results of the search box at the top: every word typed must appear in the entry, ignoring case.
 - What you write is saved one second after you stop typing, when you move to another day and when you close the app. A day with nothing written creates no file.
 - **Attach file…** copies files into the day's attachments folder (`2026/11/2026-11-24/`) and adds a link to them in the text.
-- Entries from the 2014 LogBook (`year/month/DD.txt` or `year/month/YYYYMMDD.txt`, also in Windows-1252) are read and written back in place.
+- The editor colours the Markdown as you type (headings, bold, italic, code, links, lists, quotes, the front matter). **Preview** shows the entry formatted, with working links to its attachments; **Write** goes back to the text.
+- Entries from the 2014 LogBook (`year/month/DD.txt` or `year/month/YYYYMMDD.txt`, also in Windows-1252) are read as they are. The first time you change one, it becomes a Markdown entry: the file is renamed to `year/month/YYYY-MM-DD.md` and saved in UTF-8. Entries you don't change stay as they are.
 - Italian and English: the language of the system at first (on Windows and macOS the language of the user interface, elsewhere `LC_ALL`, `LC_MESSAGES` or `LANG`), or the one chosen in **File › Language**.
 
 ## Your text is never lost
 
-Every save goes to a temporary file that is then renamed over the entry, so a crash or a full disk never leaves half a page. Before saving, DiaryCraft checks that the file on disk is still the one it read. If another computer or another program changed it meanwhile, DiaryCraft does not overwrite it: it saves your text beside it as `2026-11-24 (conflict <computer> <time>).md`, shows a notice, and lets you compare the two versions and keep either. If the entry on screen has no unsaved changes, a version changed elsewhere is simply reloaded. DiaryCraft never deletes files.
+Every save goes to a temporary file that is then renamed over the entry, so a crash or a full disk never leaves half a page. Before saving, DiaryCraft checks that the file on disk is still the one it read. If another computer or another program changed it meanwhile, DiaryCraft does not overwrite it: it saves your text beside it as `2026-11-24 (conflict <computer> <time>).md`, shows a notice, and lets you compare the two versions and keep either. If the entry on screen has no unsaved changes, a version changed elsewhere is simply reloaded. DiaryCraft never deletes files. If a sync client brings back the `.txt` of an entry that became Markdown on another computer, it is listed with the conflict copies.
 
 ## Command line and agents
 

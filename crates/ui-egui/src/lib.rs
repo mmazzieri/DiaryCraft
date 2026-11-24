@@ -4,6 +4,7 @@
 mod app;
 mod folders;
 mod i18n;
+mod markdown;
 mod views;
 
 pub use app::DiaryCraftApp;

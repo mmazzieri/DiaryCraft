@@ -1,6 +1,6 @@
 # DiaryCraft — piano di implementazione v1 (bozza)
 
-Stato: v1 del 24/11/2026, scritta da Claude; passi 1-5 realizzati nella prima PR, tranne l’evidenziazione del Markdown. Decisioni di Mauro già prese (24/11/2026): nome DiaryCraft; l'app nasce dall'idea logbook (OneDrive\Progetti\03 Prototype\logbook), la scrive Claude direttamente come BalanceCraft e non con Craft Anything, e il metodo di Kimbro (mappa-pensieri) ne diventa una funzionalità.
+Stato: v1 del 24/11/2026, scritta da Claude; passi 1-5 realizzati nella prima PR; evidenziazione del Markdown, anteprima e conversione delle voci .txt aggiunte con l'issue #4. Decisioni di Mauro già prese (24/11/2026): nome DiaryCraft; l'app nasce dall'idea logbook (OneDrive\Progetti\03 Prototype\logbook), la scrive Claude direttamente come BalanceCraft e non con Craft Anything, e il metodo di Kimbro (mappa-pensieri) ne diventa una funzionalità.
 
 ## Punto di partenza
 
@@ -43,13 +43,13 @@ xtask/          ci, packaging
 - Il file è solo testo. Metadati facoltativi (luogo, umore, etichette) in un front matter YAML minimo in testa al file, che l'app conserva anche quando contiene chiavi che non conosce.
 - Allegati: cartella `AAAA/MM/AAAA-MM-GG/` accanto alla voce; l'app li elenca e li apre con il programma di sistema, e li inserisce nel testo come link relativi Markdown.
 - Impostazioni del diario in `.diarycraft/config.json` nella radice (versione del formato, lingua del calendario, primo giorno della settimana), così sono uguali su ogni computer che apre la cartella. Le impostazioni della finestra restano sul computer.
-- Import: la v1 legge anche i layout della nota del 2014 (`AAAA/MM/GG.txt` e `AAAA/MM/AAAAMMGG.txt`) e li mostra; la migrazione al layout nuovo è un comando esplicito, non automatico.
+- Import: DiaryCraft legge anche i layout della nota del 2014 (`AAAA/MM/GG.txt` e `AAAA/MM/AAAAMMGG.txt`) e li mostra. Decisione di Mauro (24/11/2026, issue #4): le voci devono essere Markdown, quindi una voce `.txt` diventa `.md` in silenzio la prima volta che Mauro la modifica. Il file viene rinominato in `AAAA/MM/AAAA-MM-GG.md` (non cancellato e riscritto) e poi salvato in UTF-8, solo se è ancora la versione letta dall'editor e se non esiste già un `.md` di quel giorno; altrimenti vale la regola dei conflitti. Le voci non modificate restano come sono. Un `.txt` nascosto da un `.md` dello stesso giorno, per esempio riportato dal client di sincronizzazione, compare tra le copie di conflitto.
 
 ## Interfaccia v1
 
 - In alto: la cartella aperta, la ricerca nel testo di tutte le voci, il pulsante Oggi.
 - A sinistra il calendario del mese, con i giorni che hanno una voce evidenziati e le frecce per mese e anno; sotto, l'elenco delle voci recenti e i risultati della ricerca.
-- A destra l'editor del giorno: testo Markdown con evidenziazione leggera (titoli, grassetto, corsivo, elenchi, link), contatore delle parole, allegati.
+- A destra l'editor del giorno: testo Markdown con evidenziazione leggera (titoli, grassetto, corsivo, codice, elenchi, citazioni, link, front matter; `crates/engine/src/markdown.rs`, una riga alla volta, senza mai fallire), contatore delle parole, allegati. «Scrivi» e «Anteprima» passano dal testo alla vista formattata (CommonMark, `egui_commonmark`); nella vista i link aprono il browser (solo http, https, mailto) o i file del diario (mai fuori dalla sua cartella).
 - Salvataggio automatico un secondo dopo l'ultima modifica, al cambio di giorno e alla chiusura. La voce di un giorno senza testo non crea file.
 - Controllo periodico della cartella: se un'altra copia dell'app o il client di sincronizzazione cambia la voce aperta e l'editor non ha modifiche, l'app ricarica; se le ha, salva il testo locale come copia di conflitto (`AAAA-MM-GG (conflitto PC).md`) e mostra le due versioni affiancate per unirle a mano.
 - Lingue: italiano e inglese. Tema chiaro e scuro.

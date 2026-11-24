@@ -6,6 +6,11 @@
 //! with the version the editor started from; if somebody else changed it (another computer through
 //! the sync client, another editor), DiaryCraft does not overwrite it: it writes the editor's text
 //! beside it as a conflict copy and says so. Files are never deleted.
+//!
+//! Entries are Markdown. A plain-text entry of the 2014 layouts is read where it is, and the first
+//! time the owner changes it, it is moved to its standard name (`YYYY/MM/YYYY-MM-DD.md`) and
+//! written there in UTF-8: the file is renamed, never deleted, and only when it is still the
+//! version the editor read.
 #![forbid(unsafe_code)]
 
 mod encoding;
@@ -74,11 +79,25 @@ pub struct Loaded {
     pub encoding: Encoding,
 }
 
+impl Loaded {
+    /// Takes in a successful save: the version now on disk and the file it is in, which differs
+    /// from the one read when a plain-text entry was moved to its Markdown name. A Windows-1252
+    /// entry is UTF-8 from its first save on.
+    pub fn written(&mut self, base: Fingerprint, path: PathBuf) {
+        self.base = Some(base);
+        self.path = path;
+        if self.encoding == Encoding::Windows1252 {
+            self.encoding = Encoding::Utf8;
+        }
+    }
+}
+
 /// What happened to a save.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Saved {
-    /// The text is on disk; `base` is the new version to compare with at the next save.
-    Written { base: Fingerprint },
+    /// The text is on disk, in `path`; `base` is the new version to compare with at the next
+    /// save. Pass both to [`Loaded::written`].
+    Written { base: Fingerprint, path: PathBuf },
     /// Nothing to write: the text is blank and the day has no file.
     Skipped,
     /// The file changed on disk since it was read. It was left as it is and the editor's text
@@ -156,7 +175,9 @@ impl Diary {
                         continue;
                     };
                     if let Some(r) = layout::parse(year, month, &name) {
-                        add_entry(&mut entries, r);
+                        if let Some(hidden) = add_entry(&mut entries, r) {
+                            copies.push((r.date, self.path_of(hidden)));
+                        }
                     } else if let Some(date) = layout::conflict_copy(year, month, &name) {
                         copies.push((date, item.path()));
                     }
@@ -230,11 +251,23 @@ impl Diary {
             return Ok(Saved::Skipped);
         }
         let bytes = encoding::encode(text, loaded.encoding);
+        let base = Fingerprint::of(&bytes);
+        let standard = self.path_of(EntryRef { date: loaded.date, layout: Layout::Standard });
+        if loaded.path != standard && !standard.exists() {
+            // A plain-text entry becomes Markdown. The file is moved first, so that the old text
+            // is never without a name: if the write after it fails, the entry still holds it.
+            if current.is_some() {
+                fs::rename(&loaded.path, &standard).map_err(io_err(&loaded.path))?;
+            }
+            write_atomic(&standard, &bytes)?;
+            self.scan()?;
+            return Ok(Saved::Written { base, path: standard });
+        }
         write_atomic(&loaded.path, &bytes)?;
         if current.is_none() {
             self.scan()?;
         }
-        Ok(Saved::Written { base: Fingerprint::of(&bytes) })
+        Ok(Saved::Written { base, path: loaded.path.clone() })
     }
 
     fn conflict_path(&self, date: NaiveDate, label: &str, stamp: &str) -> PathBuf {
@@ -298,17 +331,20 @@ impl Diary {
     }
 }
 
-/// Keeps one naming per day: DiaryCraft's own wins over the 2014 ones.
-fn add_entry(entries: &mut BTreeMap<NaiveDate, Layout>, r: EntryRef) {
+/// Keeps one naming per day: DiaryCraft's own wins over the 2014 ones. Returns the file that
+/// lost, which is listed with the conflict copies so that its text is not out of sight (a sync
+/// client may bring back a `.txt` entry that was moved to its `.md` name on another computer).
+fn add_entry(entries: &mut BTreeMap<NaiveDate, Layout>, r: EntryRef) -> Option<EntryRef> {
     let rank = |l: Layout| match l {
         Layout::Standard => 0,
         Layout::LegacyCompact => 1,
         Layout::LegacyDay => 2,
     };
-    match entries.get(&r.date) {
-        Some(&old) if rank(old) <= rank(r.layout) => {}
-        _ => {
+    match entries.get(&r.date).copied() {
+        Some(old) if rank(old) <= rank(r.layout) => Some(r),
+        old => {
             entries.insert(r.date, r.layout);
+            old.map(|layout| EntryRef { date: r.date, layout })
         }
     }
 }

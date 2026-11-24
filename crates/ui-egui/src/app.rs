@@ -20,6 +20,8 @@ const POLL_EVERY: f64 = 2.0;
 const SCAN_EVERY: f64 = 10.0;
 /// How many of the latest entries are listed under the calendar.
 const RECENT_ENTRIES: usize = 30;
+/// Writes the page now: Ctrl+S, or ⌘S on macOS.
+pub const SAVE_SHORTCUT: egui::KeyboardShortcut = egui::KeyboardShortcut::new(egui::Modifiers::COMMAND, egui::Key::S);
 
 /// Per-computer preferences, saved by eframe.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -31,6 +33,9 @@ pub struct Prefs {
     pub last: Option<PathBuf>,
     /// The page is shown formatted instead of as Markdown to edit.
     pub preview: bool,
+    /// Autosave is off: the page is written by Save (Ctrl+S), when moving to another day, when
+    /// attaching a file and at exit, but not while typing. Off by default, so autosave is on.
+    pub manual_save: bool,
 }
 
 /// The editor's text could not be written over the file, which changed on disk.
@@ -66,6 +71,7 @@ pub enum Action {
     KeepMine,
     SetLang(Lang),
     Search,
+    Save,
     Quit,
 }
 
@@ -258,7 +264,7 @@ impl DiaryCraftApp {
     }
 
     fn tick(&mut self, time: f64) {
-        if self.dirty_since.is_some_and(|t| time - t >= SAVE_DELAY) {
+        if !self.prefs.manual_save && self.dirty_since.is_some_and(|t| time - t >= SAVE_DELAY) {
             self.flush();
         }
         if time - self.last_poll >= POLL_EVERY {
@@ -369,6 +375,7 @@ impl DiaryCraftApp {
                 Action::KeepMine => self.keep_mine(),
                 Action::SetLang(lang) => self.prefs.lang = Some(lang),
                 Action::Search => self.run_search(),
+                Action::Save => self.flush(),
                 Action::Quit => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
             }
         }
@@ -377,7 +384,11 @@ impl DiaryCraftApp {
     pub fn status(&self) -> (String, Option<String>) {
         let s = self.strings();
         let words = self.page.as_ref().map(|p| text::word_count(&p.text)).unwrap_or(0);
-        let state = if self.dirty_since.is_some() { s.pending } else { s.saved };
+        let state = match (self.dirty_since.is_some(), self.prefs.manual_save) {
+            (false, _) => s.saved,
+            (true, false) => s.pending,
+            (true, true) => s.pending_manual,
+        };
         let mut left = format!("{state} · {words} {}", s.words);
         if self.page.as_ref().is_some_and(|p| p.loaded.encoding == Encoding::Windows1252) {
             left = format!("{left} · {}", s.legacy_encoding);
@@ -404,6 +415,9 @@ impl eframe::App for DiaryCraftApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         let time = ctx.input(|i| i.time);
+        if ctx.input_mut(|i| i.consume_shortcut(&SAVE_SHORTCUT)) {
+            self.actions.push(Action::Save);
+        }
         self.tick(time);
         ctx.request_repaint_after(Duration::from_millis(500));
 

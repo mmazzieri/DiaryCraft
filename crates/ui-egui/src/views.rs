@@ -52,11 +52,26 @@ pub fn top_bar(ui: &mut egui::Ui, app: &mut DiaryCraftApp) {
         if r.changed() {
             app.actions.push(Action::Search);
         }
-        if let Some(diary) = &app.diary {
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            let mut autosave = !app.prefs.manual_save;
+            if ui.checkbox(&mut autosave, s.autosave).on_hover_text(s.autosave_hint).changed() {
+                app.prefs.manual_save = !autosave;
+            }
+            if app.prefs.manual_save {
+                let dirty = app.dirty_since.is_some();
+                if ui
+                    .add_enabled(dirty, egui::Button::new(s.save))
+                    .on_hover_text(ui.ctx().format_shortcut(&crate::app::SAVE_SHORTCUT))
+                    .clicked()
+                {
+                    app.actions.push(Action::Save);
+                }
+            }
+            ui.separator();
+            if let Some(diary) = &app.diary {
                 ui.label(egui::RichText::new(diary.root().display().to_string()).weak().small());
-            });
-        }
+            }
+        });
     });
 }
 

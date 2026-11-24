@@ -1,0 +1,8 @@
+DiaryCraft
+Copyright (c) 2026 Mauro Mazzieri and the DiaryCraft contributors
+
+Licensed under the MIT License or the Apache License, Version 2.0, at your option.
+Third-party material and its licenses are listed in ATTRIBUTION.md.
+
+The app bundles the Ubuntu Light font (Ubuntu Font Licence 1.0), Hack (MIT, with Bitstream Vera parts)
+and Noto Emoji (SIL Open Font License 1.1) through egui; see ATTRIBUTION.md.

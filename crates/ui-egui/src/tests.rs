@@ -36,3 +36,17 @@ fn errors_are_described_in_italian() {
     assert!(Lang::It.describe(&e).contains("versione più recente"));
     assert!(Lang::En.describe(&e).contains("newer"));
 }
+
+#[test]
+fn links_of_the_formatted_view_stay_in_the_diary() {
+    use crate::markdown::resolve_link;
+    let root = Path::new("/diario");
+    let dir = Path::new("/diario/2026/11");
+    assert_eq!(
+        resolve_link("2026-11-24/foto.jpg", dir, root),
+        Some(PathBuf::from("/diario/2026/11/2026-11-24/foto.jpg"))
+    );
+    assert_eq!(resolve_link("https://example.org", dir, root), Some(PathBuf::from("https://example.org")));
+    assert_eq!(resolve_link("../../../etc/passwd", dir, root), None);
+    assert_eq!(resolve_link("file:///etc/passwd", dir, root), None);
+}

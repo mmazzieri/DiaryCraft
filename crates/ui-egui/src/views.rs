@@ -229,6 +229,13 @@ pub fn page(ui: &mut egui::Ui, app: &mut DiaryCraftApp, time: f64) {
             if ui.button(s.attach).clicked() {
                 app.actions.push(Action::Attach);
             }
+            ui.separator();
+            if ui.selectable_label(app.prefs.preview, s.preview).clicked() {
+                app.prefs.preview = true;
+            }
+            if ui.selectable_label(!app.prefs.preview, s.write).clicked() {
+                app.prefs.preview = false;
+            }
         });
     });
     if !page.attachments.is_empty() {
@@ -243,10 +250,40 @@ pub fn page(ui: &mut egui::Ui, app: &mut DiaryCraftApp, time: f64) {
         });
     }
     ui.separator();
+    if app.prefs.preview {
+        let body = diarycraft_engine::text::split_front_matter(&page.text).1;
+        egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+            egui_commonmark::CommonMarkViewer::new().show(ui, &mut app.markdown_cache, body);
+        });
+        // The links of the formatted view: web addresses go to the browser, relative ones to the
+        // files of the diary (the attachments). egui would open neither by itself.
+        let urls = ui.ctx().output_mut(|o| {
+            let (urls, rest) = std::mem::take(&mut o.commands)
+                .into_iter()
+                .partition::<Vec<_>, _>(|c| matches!(c, egui::OutputCommand::OpenUrl(_)));
+            o.commands = rest;
+            urls
+        });
+        if let (Some(dir), Some(diary)) = (page.loaded.path.parent(), &app.diary) {
+            for command in urls {
+                if let egui::OutputCommand::OpenUrl(open) = command
+                    && let Some(target) = crate::markdown::resolve_link(&open.url, dir, diary.root())
+                {
+                    app.actions.push(Action::OpenPath(target));
+                }
+            }
+        }
+        return;
+    }
     let locked = app.conflict.is_some();
     let mut changed = false;
+    let mut layouter = |ui: &egui::Ui, buf: &dyn egui::TextBuffer, wrap_width: f32| {
+        let job = crate::markdown::layout_job(ui, buf.as_str(), wrap_width);
+        ui.fonts_mut(|f| f.layout_job(job))
+    };
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         let edit = egui::TextEdit::multiline(&mut page.text)
+            .layouter(&mut layouter)
             .desired_width(f32::INFINITY)
             .desired_rows(24)
             .frame(egui::Frame::NONE)

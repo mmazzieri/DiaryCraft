@@ -98,3 +98,165 @@ fn month_grid_starts_on_monday() {
     assert_eq!(add_months(d(2026, 1, 31), 1), d(2026, 2, 28));
     assert_eq!(add_months(d(2026, 1, 31), -1), d(2025, 12, 31));
 }
+
+mod markdown {
+    use crate::markdown::{Mark, highlight};
+
+    /// The marked pieces of a text, without the plain ones.
+    fn marked(text: &str) -> Vec<(&str, Mark)> {
+        highlight(text).into_iter().filter(|s| s.mark != Mark::Plain).map(|s| (&text[s.range], s.mark)).collect()
+    }
+
+    fn assert_covers(text: &str) {
+        let spans = highlight(text);
+        let mut end = 0;
+        for s in &spans {
+            assert_eq!(s.range.start, end, "gap or overlap in {text:?}: {spans:?}");
+            assert!(s.range.start < s.range.end, "empty span in {text:?}");
+            assert!(text.is_char_boundary(s.range.start) && text.is_char_boundary(s.range.end));
+            end = s.range.end;
+        }
+        assert_eq!(end, text.len(), "{text:?} not covered: {spans:?}");
+    }
+
+    #[test]
+    fn headings_emphasis_and_code() {
+        assert_eq!(marked("# Oggi\n"), vec![("#", Mark::Syntax), (" Oggi\n", Mark::Heading(1))]);
+        assert_eq!(marked("### Tre"), vec![("###", Mark::Syntax), (" Tre", Mark::Heading(3))]);
+        assert_eq!(marked("#hashtag"), vec![]);
+        assert_eq!(
+            marked("un **grande** giorno"),
+            vec![("**", Mark::Syntax), ("grande", Mark::Strong), ("**", Mark::Syntax)]
+        );
+        assert_eq!(marked("_piano_"), vec![("_", Mark::Syntax), ("piano", Mark::Emphasis), ("_", Mark::Syntax)]);
+        assert_eq!(marked("snake_case_name"), vec![]);
+        assert_eq!(marked("2 * 3 * 4"), vec![]);
+        assert_eq!(marked("usa `cargo test` ora"), vec![("`cargo test`", Mark::Code)]);
+        assert_eq!(marked("``a ` b``"), vec![("``a ` b``", Mark::Code)]);
+    }
+
+    #[test]
+    fn links_and_addresses() {
+        assert_eq!(
+            marked("vedi [foto](2026-11-24/a.jpg)."),
+            vec![
+                ("[", Mark::Syntax),
+                ("foto", Mark::Link),
+                ("](", Mark::Syntax),
+                ("2026-11-24/a.jpg", Mark::Url),
+                (")", Mark::Syntax)
+            ]
+        );
+        assert_eq!(marked("![x](y)")[0], ("![", Mark::Syntax));
+        assert_eq!(marked("sito https://example.org/a."), vec![("https://example.org/a", Mark::Url)]);
+        assert_eq!(
+            marked("<https://example.org>"),
+            vec![("<", Mark::Syntax), ("https://example.org", Mark::Url), (">", Mark::Syntax)]
+        );
+        assert_eq!(marked("[non chiuso"), vec![]);
+    }
+
+    #[test]
+    fn blocks() {
+        assert_eq!(marked("- uno\n"), vec![("- ", Mark::ListMarker)]);
+        assert_eq!(marked("12. dodici"), vec![("12. ", Mark::ListMarker)]);
+        assert_eq!(marked("- [x] fatto"), vec![("- [x] ", Mark::ListMarker)]);
+        assert_eq!(marked("> detto\n"), vec![("> ", Mark::Syntax), ("detto\n", Mark::Quote)]);
+        assert_eq!(marked("***\n"), vec![("***\n", Mark::Rule)]);
+        assert_eq!(marked("- - -"), vec![("- - -", Mark::Rule)]);
+        let fenced = "prima\n```rust\nlet a = *b*;\n```\ndopo *x*";
+        assert_eq!(
+            marked(fenced),
+            vec![
+                ("```rust\nlet a = *b*;\n```\n", Mark::CodeBlock),
+                ("*", Mark::Syntax),
+                ("x", Mark::Emphasis),
+                ("*", Mark::Syntax)
+            ]
+        );
+        // An unclosed fence runs to the end, as in CommonMark.
+        assert_eq!(marked("~~~\n# no"), vec![("~~~\n# no", Mark::CodeBlock)]);
+    }
+
+    #[test]
+    fn front_matter_is_one_span_and_rules_after_it_are_rules() {
+        let text = "---\nluogo: Macerata\n---\n# Titolo\n---\n";
+        assert_eq!(
+            marked(text),
+            vec![
+                ("---\nluogo: Macerata\n---\n", Mark::FrontMatter),
+                ("#", Mark::Syntax),
+                (" Titolo\n", Mark::Heading(1)),
+                ("---\n", Mark::Rule)
+            ]
+        );
+    }
+
+    #[test]
+    fn any_text_is_covered_on_character_boundaries() {
+        for text in [
+            "",
+            "\n",
+            "è",
+            "**",
+            "*è*",
+            "_é_x",
+            "[",
+            "[]()",
+            "![",
+            "`",
+            "<",
+            "<a:>",
+            "#",
+            "> ",
+            "-",
+            "1.",
+            "- [",
+            "http://",
+            "€**€**€",
+            "a\r\nb\r\n",
+        ] {
+            assert_covers(text);
+        }
+        // Pseudo-random texts from pieces that start marks, with multi-byte letters among them.
+        let pieces = [
+            "*", "**", "_", "`", "``", "[", "]", "(", ")", "!", "<", ">", "#", "-", " ", "\n", "è", "€", "a", "1.",
+            "http://x", "~~~", "```", "---\n",
+        ];
+        let mut seed: u64 = 0x2026_1124;
+        for _ in 0..3000 {
+            let mut text = String::new();
+            for _ in 0..(seed % 40) {
+                seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                text.push_str(pieces[(seed >> 33) as usize % pieces.len()]);
+            }
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+            assert_covers(&text);
+        }
+    }
+}
+
+#[test]
+fn links_of_the_formatted_view() {
+    use crate::markdown::{LinkTarget, link_target};
+    let rel = |p: &[&str]| Some(LinkTarget::Relative(p.iter().map(|s| (*s).to_owned()).collect()));
+    assert_eq!(link_target("2026-11-24/foto mare.jpg"), rel(&["2026-11-24", "foto mare.jpg"]));
+    assert_eq!(link_target("2026-11-24/foto%20mare.jpg"), rel(&["2026-11-24", "foto mare.jpg"]));
+    assert_eq!(link_target("./a.pdf#page=2"), rel(&["a.pdf"]));
+    assert_eq!(link_target("https://example.org/x"), Some(LinkTarget::Web("https://example.org/x".into())));
+    assert_eq!(link_target("mailto:a@example.org"), Some(LinkTarget::Web("mailto:a@example.org".into())));
+    for nowhere in [
+        "../segreto.txt",
+        "a/../../b",
+        "/etc/passwd",
+        "\\\\server\\x",
+        "file:///etc/passwd",
+        "javascript:alert(1)",
+        "C:\\x",
+        "",
+        "%ff",
+        "%00",
+    ] {
+        assert_eq!(link_target(nowhere), None, "{nowhere}");
+    }
+}

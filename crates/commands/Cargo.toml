@@ -1,0 +1,23 @@
+[package]
+name = "diarycraft-commands"
+description = "DiaryCraft commands: what the command line and the MCP server can do with a diary"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+diarycraft-engine.workspace = true
+diarycraft-file.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

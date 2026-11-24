@@ -5,7 +5,7 @@
 .DESCRIPTION
   Produces, in $env:DIST (default: dist/release):
     diarycraft-<version>-windows-x64.msi            installer (WiX v5), for all users or one
-    diarycraft-<version>-windows-x64-portable.zip   diarycraft.exe and the licence files
+    diarycraft-<version>-windows-x64-portable.zip   diarycraft.exe, diarycraft-cli.exe and the licence files
 
   The binary links the C runtime statically, so no Visual C++ redistributable is needed. The
   files are not signed: DiaryCraft has no Windows code-signing certificate yet.
@@ -47,9 +47,10 @@ Write-Output "DiaryCraft $Version for Windows x64"
 
 if (-not $SkipBuild) {
   $env:CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS = '-C target-feature=+crt-static'
-  Invoke-Native 'cargo build' { cargo build --release --locked -p $Pkg --target $Target }
+  Invoke-Native 'cargo build' { cargo build --release --locked -p $Pkg -p "$Pkg-cli" --target $Target }
 }
 $Exe = Join-Path $TargetDir "$Target\release\$Pkg.exe"
+$Cli = Join-Path $TargetDir "$Target\release\$Pkg-cli.exe"
 
 # The PE header must say x64 (machine 0x8664) and Windows GUI (subsystem 2): no console window.
 $bytes = [System.IO.File]::ReadAllBytes($Exe)
@@ -62,7 +63,7 @@ if ($subsystem -ne 2) { throw "$Pkg.exe has PE subsystem $subsystem, expected 2 
 $Stage = Join-Path $TargetDir 'windows-package\stage'
 Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Stage | Out-Null
-Copy-Item $Exe $Stage
+Copy-Item $Exe, $Cli $Stage
 foreach ($f in 'LICENSE-MIT', 'LICENSE-APACHE', 'NOTICE', 'ATTRIBUTION.md', 'THIRD-PARTY-LICENSES.txt') {
   Copy-Item -LiteralPath (Join-Path $Root $f) -Destination $Stage
 }
@@ -78,7 +79,7 @@ Remove-Item -Force -ErrorAction SilentlyContinue ([IO.Path]::ChangeExtension($Ms
 $Portable = Join-Path $TargetDir "windows-package\$Pkg-$Version-windows-x64-portable"
 Remove-Item -Recurse -Force $Portable -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Portable | Out-Null
-Copy-Item $Exe $Portable
+Copy-Item $Exe, $Cli $Portable
 foreach ($f in 'README.md', 'LICENSE-MIT', 'LICENSE-APACHE', 'NOTICE', 'ATTRIBUTION.md', 'THIRD-PARTY-LICENSES.txt') {
   $p = Join-Path $Root $f
   if (Test-Path $p) { Copy-Item $p $Portable }

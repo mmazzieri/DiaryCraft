@@ -42,7 +42,7 @@ jobs:
           dpkg-deb --info dist/release/*.deb
           dpkg-deb --contents dist/release/*.deb | grep -E 'usr/bin/diarycraft|applications/'
           rpm -qip dist/release/*.rpm
-          tar -tzf dist/release/*.tar.gz | grep -E 'bin/diarycraft$'
+          tar -tzf dist/release/*.tar.gz | grep -E 'bin/diarycraft-cli$'
       - uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.runner }}
@@ -92,6 +92,8 @@ jobs:
           if ($p.ExitCode -ne 0) { Get-Content install.log -Tail 60; throw "install failed: $($p.ExitCode)" }
           $exe = Join-Path $env:LOCALAPPDATA 'Programs\DiaryCraft\diarycraft.exe'
           if (-not (Test-Path $exe)) { throw "not installed at $exe" }
+          & (Join-Path (Split-Path $exe) 'diarycraft-cli.exe') --version
+          if ($LASTEXITCODE -ne 0) { throw "diarycraft-cli does not run" }
           $p = Start-Process msiexec -ArgumentList '/x', "`"$msi`"", '/qn' -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "uninstall failed: $($p.ExitCode)" }
       - uses: actions/upload-artifact@v4

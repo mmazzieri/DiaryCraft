@@ -60,6 +60,11 @@ impl Fingerprint {
     pub fn of(bytes: &[u8]) -> Self {
         Self(Sha256::digest(bytes).into())
     }
+
+    /// The fingerprint as lowercase hexadecimal, the form the command line and agents see.
+    pub fn to_hex(self) -> String {
+        self.0.iter().map(|b| format!("{b:02x}")).collect()
+    }
 }
 
 /// An entry as read from disk, with what is needed to write it back safely.

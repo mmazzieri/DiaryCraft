@@ -28,7 +28,10 @@ dbg_macro = "warn"
 diarycraft-model = { path = "crates/model" }
 diarycraft-engine = { path = "crates/engine" }
 diarycraft-file = { path = "crates/file" }
+diarycraft-commands = { path = "crates/commands" }
 diarycraft-ui-egui = { path = "crates/ui-egui" }
+craft-mcp-server = { git = "https://github.com/storytold/craft-libs", rev = "249a41bd9306a1b34330ac94e596a1a8b881378a" }
+clap = { version = "4", features = ["derive", "env"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 thiserror = "2"

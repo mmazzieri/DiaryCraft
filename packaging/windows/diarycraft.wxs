@@ -52,6 +52,9 @@
         <!-- Win+R "diarycraft". -->
         <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\diarycraft.exe" Value="[#DiaryCraftExe]" Type="string" />
       </Component>
+      <Component Id="DiaryCraftCli" Directory="INSTALLFOLDER" Guid="B8FAC3D0-232F-4EFF-AA08-5E5C90763EAD">
+        <File Id="DiaryCraftCliExe" Source="$(var.BinDir)\diarycraft-cli.exe" KeyPath="yes" />
+      </Component>
       <Component Id="DiaryCraftShortcut" Directory="ProgramMenuFolder" Guid="65EE4A2A-1052-4F81-A4A7-8CFED27AB32D">
         <Shortcut Id="StartMenuShortcut" Name="DiaryCraft" Description="A diary kept as one text file per day"
             Target="[#DiaryCraftExe]" WorkingDirectory="INSTALLFOLDER" Icon="DiaryCraftIcon.exe">

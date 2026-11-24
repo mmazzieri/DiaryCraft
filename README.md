@@ -36,6 +36,29 @@ On macOS, drag DiaryCraft to Applications. Until a release is signed with a Deve
 
 Every save goes to a temporary file that is then renamed over the entry, so a crash or a full disk never leaves half a page. Before saving, DiaryCraft checks that the file on disk is still the one it read. If another computer or another program changed it meanwhile, DiaryCraft does not overwrite it: it saves your text beside it as `2026-11-24 (conflict <computer> <time>).md`, shows a notice, and lets you compare the two versions and keep either. If the entry on screen has no unsaved changes, a version changed elsewhere is simply reloaded. DiaryCraft never deletes files.
 
+## Command line and agents
+
+Every package also has `diarycraft-cli`, which works on the diary without a window:
+
+```
+diarycraft-cli --diary ~/Documents/DiaryCraft append today "Lunch with friends."
+diarycraft-cli --diary ~/Documents/DiaryCraft search lunch
+diarycraft-cli --help
+```
+
+`--json` prints the whole answer; `DIARYCRAFT_DIARY` replaces `--diary`. An existing entry is replaced only with the version that `read --json` gave, so a change made meanwhile is not overwritten.
+
+`diarycraft-cli mcp` offers the same commands to an agent over the Model Context Protocol, on standard input and output, with no network:
+
+```json
+{"mcpServers": {"diarycraft": {"command": "diarycraft-cli", "args": [
+  "--diary", "/home/me/Documents/DiaryCraft", "mcp",
+  "--automation-read-root", "/home/me/Downloads",
+  "--automation-write-root", "/home/me/Documents/DiaryCraft"]}}}
+```
+
+Both folders are required. The diary must be inside the write folder, and files to attach come only from the two folders. Links that lead outside are refused, and so are hard links except on Windows, where the check is not available. The folders must not be writable by programs you do not trust: a folder swapped during a command is not detected.
+
 ## Building
 
 ```

@@ -16,6 +16,8 @@ Rust crates are listed with their licenses by `cargo deny list`; `cargo deny che
 | chrono | 0.4 | MIT OR Apache-2.0 |
 | sha2 | 0.10 | MIT OR Apache-2.0 |
 | sys-locale | 0.3 | MIT OR Apache-2.0 |
+| craft-mcp-server (storytold/craft-libs) | 0.1 | MIT OR Apache-2.0 |
+| clap | 4 | MIT OR Apache-2.0 |
 | thiserror | 2 | MIT OR Apache-2.0 |
 | tempfile (tests only) | 3 | MIT OR Apache-2.0 |
 

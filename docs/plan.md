@@ -12,7 +12,7 @@ Stato: v1 del 24/11/2026, scritta da Claude; passi 1-5 realizzati nella prima PR
 
 App desktop locale in Rust ed egui per tenere un diario: una voce per giorno, scritta in testo semplice, salvata come file normale in una cartella che l'utente sceglie e che può stare in locale o in una cartella sincronizzata (OneDrive, Google Drive, Dropbox, Syncthing) o su un disco condiviso. I file restano leggibili e modificabili con qualunque editor anche senza l'app. Più avanti: candidatura come community app nell'ArtCraft Launcher.
 
-Fuori dalla v1: account, server, cifratura, app mobile, build web, MCP/CLI, AI.
+Fuori dalla v1: account, server, cifratura, app mobile, build web, AI. (CLI e server MCP: aggiunti dopo la 0.2, `crates/commands` e `apps/diarycraft-cli`.)
 
 ## Vincoli
 

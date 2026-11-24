@@ -59,6 +59,9 @@ contents:
   - src: ${STAGE}/usr/bin/diarycraft
     dst: /usr/bin/diarycraft
     file_info: { mode: 0755 }
+  - src: ${STAGE}/usr/bin/diarycraft-cli
+    dst: /usr/bin/diarycraft-cli
+    file_info: { mode: 0755 }
   - src: ${STAGE}/usr/share/
     dst: /usr/share/
     type: tree

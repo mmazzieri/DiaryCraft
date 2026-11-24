@@ -136,6 +136,11 @@ fn calendar(ui: &mut egui::Ui, app: &mut DiaryCraftApp) {
                         if day == now {
                             text = text.underline();
                         }
+                        let unsaved = app.drafts.contains_key(&day)
+                            || (selected == Some(day) && app.dirty_since.is_some() && app.prefs.manual_save);
+                        if unsaved {
+                            text = text.italics().color(ui.visuals().warn_fg_color);
+                        }
                         let button =
                             egui::Button::selectable(selected == Some(day), text).min_size(egui::vec2(28.0, 24.0));
                         if ui.add(button).clicked() {
@@ -344,4 +349,33 @@ pub fn compare_window(ctx: &egui::Context, app: &mut DiaryCraftApp) {
     if !open {
         conflict.comparing = false;
     }
+}
+
+/// With autosave off, leaving with unsaved pages asks what to do with them.
+pub fn unsaved_window(ctx: &egui::Context, app: &mut DiaryCraftApp) {
+    if app.leaving.is_none() {
+        return;
+    }
+    let s = app.strings();
+    let days: Vec<String> = app.unsaved_days().iter().map(|d| s.long_date(*d)).collect();
+    egui::Modal::new(egui::Id::unique("unsaved")).show(ctx, |ui| {
+        ui.set_max_width(420.0);
+        ui.heading(s.unsaved_title);
+        ui.label(s.unsaved_body);
+        for day in &days {
+            ui.label(format!("• {day}"));
+        }
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            if ui.button(s.save).clicked() {
+                app.actions.push(Action::SaveAndLeave);
+            }
+            if ui.button(s.discard).clicked() {
+                app.actions.push(Action::DiscardAndLeave);
+            }
+            if ui.button(s.cancel).clicked() {
+                app.actions.push(Action::CancelLeave);
+            }
+        });
+    });
 }

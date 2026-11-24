@@ -7,6 +7,7 @@ use diarycraft_engine::search::{Hit, search};
 use diarycraft_engine::text;
 use diarycraft_file::{Diary, Encoding, Fingerprint, Loaded, Saved};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -33,8 +34,9 @@ pub struct Prefs {
     pub last: Option<PathBuf>,
     /// The page is shown formatted instead of as Markdown to edit.
     pub preview: bool,
-    /// Autosave is off: the page is written by Save (Ctrl+S), when moving to another day, when
-    /// attaching a file and at exit, but not while typing. Off by default, so autosave is on.
+    /// Autosave is off: nothing is written until Save (Ctrl+S). Unsaved pages are kept in memory
+    /// while the app is open, and leaving with unsaved pages asks first. Off by default, so
+    /// autosave is on.
     pub manual_save: bool,
 }
 
@@ -55,6 +57,15 @@ pub struct Page {
     pub attachments: Vec<PathBuf>,
 }
 
+/// What would end the session with the diary, held while the owner says what to do with the
+/// unsaved pages.
+#[derive(Debug, Clone)]
+pub enum Leave {
+    Quit,
+    CloseDiary,
+    Open(PathBuf),
+}
+
 /// What the views ask for while drawing; applied after the frame.
 #[derive(Debug, Clone)]
 pub enum Action {
@@ -73,6 +84,11 @@ pub enum Action {
     Search,
     Save,
     Quit,
+    /// From the unsaved-changes question: save everything, then leave.
+    SaveAndLeave,
+    /// From the unsaved-changes question: drop the unsaved pages, then leave.
+    DiscardAndLeave,
+    CancelLeave,
 }
 
 pub struct DiaryCraftApp {
@@ -87,6 +103,12 @@ pub struct DiaryCraftApp {
     pub recent: Vec<(NaiveDate, String)>,
     pub dirty_since: Option<f64>,
     pub conflict: Option<Conflict>,
+    /// With autosave off, the pages of other days with unsaved changes, kept until Save.
+    pub drafts: BTreeMap<NaiveDate, Page>,
+    /// Leaving was asked while there are unsaved pages: the question is on screen.
+    pub leaving: Option<Leave>,
+    /// The owner answered the question: the next close request goes through.
+    allow_close: bool,
     pub error: Option<String>,
     pub notice: Option<(String, f64)>,
     pub actions: Vec<Action>,
@@ -129,6 +151,9 @@ impl DiaryCraftApp {
             recent: Vec::new(),
             dirty_since: None,
             conflict: None,
+            drafts: BTreeMap::new(),
+            leaving: None,
+            allow_close: false,
             error: None,
             notice: None,
             actions: Vec::new(),
@@ -153,8 +178,67 @@ impl DiaryCraftApp {
         self.prefs.lang.unwrap_or(self.system_lang)
     }
 
+    /// Whether something typed is not on disk yet: the page on screen or a kept page.
+    pub fn has_unsaved(&self) -> bool {
+        self.dirty_since.is_some() || !self.drafts.is_empty()
+    }
+
+    /// The days with unsaved changes, the one on screen included.
+    pub fn unsaved_days(&self) -> Vec<NaiveDate> {
+        let mut days: Vec<NaiveDate> = self.drafts.keys().copied().collect();
+        if self.dirty_since.is_some()
+            && let Some(page) = &self.page
+        {
+            days.push(page.loaded.date);
+        }
+        days.sort();
+        days
+    }
+
+    /// Leaves now, or asks first when autosave is off and something is not saved.
+    fn leave(&mut self, leave: Leave, ctx: &egui::Context) {
+        if self.prefs.manual_save && self.has_unsaved() {
+            self.leaving = Some(leave);
+            return;
+        }
+        self.do_leave(leave, ctx);
+    }
+
+    fn do_leave(&mut self, leave: Leave, ctx: &egui::Context) {
+        match leave {
+            Leave::Quit => {
+                self.allow_close = true;
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+            Leave::CloseDiary => self.close_diary(),
+            Leave::Open(path) => self.open(&path),
+        }
+    }
+
+    /// Writes every unsaved page: the one on screen and the kept ones. A kept page that changed
+    /// on disk meanwhile is written as a conflict copy, as the page on screen would be.
+    fn save_all(&mut self) {
+        self.flush();
+        let lang = self.lang();
+        let Some(diary) = &mut self.diary else { return };
+        for (date, draft) in std::mem::take(&mut self.drafts) {
+            match diary.save(&draft.loaded, &draft.text, &computer_name(), &stamp()) {
+                Ok(Saved::Written { .. } | Saved::Skipped) => {}
+                Ok(Saved::Conflict { copy, .. }) => {
+                    self.error = Some(format!("{}: {}", lang.strings().conflict_title, copy.display()));
+                }
+                Err(e) => {
+                    self.error = Some(lang.describe(&e));
+                    self.drafts.insert(date, draft);
+                }
+            }
+        }
+        self.refresh_recent();
+    }
+
     fn open(&mut self, path: &Path) {
         self.flush();
+        self.drafts.clear();
         match Diary::open(path) {
             Ok(diary) => {
                 self.diary = Some(diary);
@@ -175,6 +259,7 @@ impl DiaryCraftApp {
 
     fn close_diary(&mut self) {
         self.flush();
+        self.drafts.clear();
         self.diary = None;
         self.page = None;
         self.conflict = None;
@@ -183,8 +268,26 @@ impl DiaryCraftApp {
         self.prefs.last = None;
     }
 
-    /// Opens the page of a day, after writing the one being left.
+    /// Opens the page of a day, after writing the one being left; with autosave off the page
+    /// being left is kept in memory instead, and a kept page comes back as it was left.
     fn select(&mut self, date: NaiveDate) {
+        if self.prefs.manual_save {
+            if self.conflict.is_some() {
+                return;
+            }
+            if self.dirty_since.take().is_some()
+                && let Some(page) = self.page.take()
+            {
+                self.drafts.insert(page.loaded.date, page);
+            }
+            if let Some(draft) = self.drafts.remove(&date) {
+                self.month = diarycraft_engine::calendar::month_start(date);
+                self.seen = Some(draft.loaded.base);
+                self.page = Some(draft);
+                self.dirty_since = Some(0.0);
+                return;
+            }
+        }
         self.flush();
         if self.conflict.is_some() {
             // The conflict must be settled first: leaving would hide it.
@@ -264,8 +367,14 @@ impl DiaryCraftApp {
     }
 
     fn tick(&mut self, time: f64) {
-        if !self.prefs.manual_save && self.dirty_since.is_some_and(|t| time - t >= SAVE_DELAY) {
-            self.flush();
+        if !self.prefs.manual_save {
+            if self.dirty_since.is_some_and(|t| time - t >= SAVE_DELAY) {
+                self.flush();
+            }
+            // Autosave was turned back on with pages kept from before.
+            if !self.drafts.is_empty() {
+                self.save_all();
+            }
         }
         if time - self.last_poll >= POLL_EVERY {
             self.last_poll = time;
@@ -296,8 +405,8 @@ impl DiaryCraftApp {
             return;
         }
         let mut all = diary.load_all();
-        // The page being written counts with its unsaved text.
-        if let Some(page) = &self.page {
+        // The pages being written count with their unsaved text.
+        for page in self.page.iter().chain(self.drafts.values()) {
             all.retain(|(d, _)| *d != page.loaded.date);
             all.push((page.loaded.date, page.text.clone()));
         }
@@ -326,7 +435,9 @@ impl DiaryCraftApp {
             }
         }
         page.attachments = diary.attachments(date);
-        self.flush();
+        if !self.prefs.manual_save {
+            self.flush();
+        }
     }
 
     fn use_disk(&mut self) {
@@ -360,23 +471,40 @@ impl DiaryCraftApp {
                         dialog = dialog.set_directory(start);
                     }
                     if let Some(p) = dialog.pick_folder() {
-                        self.open(&p);
+                        self.leave(Leave::Open(p), ctx);
                     }
                 }
                 Action::Create(p) => match std::fs::create_dir_all(&p) {
                     Ok(()) => self.open(&p),
                     Err(e) => self.error = Some(format!("{}: {e}", p.display())),
                 },
-                Action::Open(p) => self.open(&p),
-                Action::CloseDiary => self.close_diary(),
+                Action::Open(p) => self.leave(Leave::Open(p), ctx),
+                Action::CloseDiary => self.leave(Leave::CloseDiary, ctx),
                 Action::Attach => self.attach(),
                 Action::OpenPath(p) => open_with_system(&p),
                 Action::UseDisk => self.use_disk(),
                 Action::KeepMine => self.keep_mine(),
                 Action::SetLang(lang) => self.prefs.lang = Some(lang),
                 Action::Search => self.run_search(),
-                Action::Save => self.flush(),
-                Action::Quit => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
+                Action::Save => self.save_all(),
+                Action::Quit => self.leave(Leave::Quit, ctx),
+                Action::SaveAndLeave => {
+                    self.save_all();
+                    // Leave only if everything is on disk; an error stays on screen.
+                    if !self.has_unsaved()
+                        && let Some(leave) = self.leaving.take()
+                    {
+                        self.do_leave(leave, ctx);
+                    }
+                }
+                Action::DiscardAndLeave => {
+                    self.drafts.clear();
+                    self.dirty_since = None;
+                    if let Some(leave) = self.leaving.take() {
+                        self.do_leave(leave, ctx);
+                    }
+                }
+                Action::CancelLeave => self.leaving = None,
             }
         }
     }
@@ -384,7 +512,7 @@ impl DiaryCraftApp {
     pub fn status(&self) -> (String, Option<String>) {
         let s = self.strings();
         let words = self.page.as_ref().map(|p| text::word_count(&p.text)).unwrap_or(0);
-        let state = match (self.dirty_since.is_some(), self.prefs.manual_save) {
+        let state = match (self.has_unsaved(), self.prefs.manual_save) {
             (false, _) => s.saved,
             (true, false) => s.pending,
             (true, true) => s.pending_manual,
@@ -418,6 +546,15 @@ impl eframe::App for DiaryCraftApp {
         if ctx.input_mut(|i| i.consume_shortcut(&SAVE_SHORTCUT)) {
             self.actions.push(Action::Save);
         }
+        // Closing the window with unsaved pages and autosave off asks first.
+        if ctx.input(|i| i.viewport().close_requested())
+            && !self.allow_close
+            && self.prefs.manual_save
+            && self.has_unsaved()
+        {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            self.leaving = Some(Leave::Quit);
+        }
         self.tick(time);
         ctx.request_repaint_after(Duration::from_millis(500));
 
@@ -436,15 +573,22 @@ impl eframe::App for DiaryCraftApp {
             }
         });
         views::compare_window(&ctx, self);
+        views::unsaved_window(&ctx, self);
         self.apply_actions(&ctx);
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        self.flush();
+        // eframe calls this every half minute too: with autosave off nothing is written here.
+        if !self.prefs.manual_save {
+            self.flush();
+        }
         eframe::set_value(storage, PREFS_KEY, &self.prefs);
     }
 
     fn on_exit(&mut self) {
-        self.flush();
+        // With autosave off the owner has already said whether to save or not.
+        if !self.prefs.manual_save {
+            self.flush();
+        }
     }
 }

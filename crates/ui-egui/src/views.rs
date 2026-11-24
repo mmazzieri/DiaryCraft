@@ -145,7 +145,7 @@ pub fn side(ui: &mut egui::Ui, app: &mut DiaryCraftApp) {
                 ui.label(egui::RichText::new(s.no_results).weak());
             }
             for hit in hits {
-                let label = format!("{}  {}", hit.date.format("%Y-%m-%d"), hit.snippet);
+                let label = format!("{}  {}", hit.date.format(s.short_date), hit.snippet);
                 if ui.selectable_label(false, label).clicked() {
                     app.actions.push(Action::Select(hit.date));
                 }
@@ -154,7 +154,7 @@ pub fn side(ui: &mut egui::Ui, app: &mut DiaryCraftApp) {
         None => {
             ui.label(egui::RichText::new(s.recent_entries).strong());
             for (date, title) in &app.recent {
-                let label = format!("{}  {title}", date.format("%Y-%m-%d"));
+                let label = format!("{}  {title}", date.format(s.short_date));
                 if ui.selectable_label(false, label).clicked() {
                     app.actions.push(Action::Select(*date));
                 }

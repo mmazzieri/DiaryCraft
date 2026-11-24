@@ -17,3 +17,22 @@ fn documents_from_xdg_user_dirs() {
     assert_eq!(parse_user_dirs("XDG_DOCUMENTS_DIR=\"$HOME/\"", home), None);
     assert_eq!(parse_user_dirs("XDG_DOCUMENTS_DIR=\"relative\"", home), None);
 }
+
+#[test]
+fn language_from_system_tags() {
+    use crate::i18n::Lang;
+    for tag in ["it", "it-IT", "it_IT.UTF-8", "it_CH@euro", "IT-it"] {
+        assert_eq!(Lang::from_tag(tag), Lang::It, "{tag}");
+    }
+    for tag in ["en-US", "C", "", "de_DE.UTF-8", "ita"] {
+        assert_eq!(Lang::from_tag(tag), Lang::En, "{tag}");
+    }
+}
+
+#[test]
+fn errors_are_described_in_italian() {
+    use crate::i18n::Lang;
+    let e = diarycraft_file::Error::TooNew { found: 9 };
+    assert!(Lang::It.describe(&e).contains("versione più recente"));
+    assert!(Lang::En.describe(&e).contains("newer"));
+}

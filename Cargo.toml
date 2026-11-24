@@ -34,6 +34,7 @@ serde_json = { version = "1", features = ["preserve_order"] }
 thiserror = "2"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
 sha2 = "0.10"
+sys-locale = "0.3"
 tempfile = "3"
 egui = { version = "0.37", features = ["monochrome_emoji_fonts"] }
 eframe = { version = "0.37", default-features = false, features = ["default_fonts", "wgpu", "accesskit", "wayland", "x11", "persistence"] }

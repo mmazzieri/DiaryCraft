@@ -9,14 +9,47 @@ pub enum Lang {
 }
 
 impl Lang {
-    /// The language of the system, from the usual environment variables; English otherwise.
-    pub fn from_env() -> Self {
-        let it = ["LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"]
-            .iter()
-            .filter_map(|k| std::env::var(k).ok())
-            .find(|v| !v.is_empty())
-            .is_some_and(|v| v.to_ascii_lowercase().starts_with("it"));
-        if it { Lang::It } else { Lang::En }
+    /// The language of the system: the usual environment variables when set (so that
+    /// `LANG=en_US.UTF-8` overrides the desktop), otherwise the language of the user interface as
+    /// the system reports it (Windows and macOS do not set those variables). English otherwise.
+    pub fn from_system() -> Self {
+        let env =
+            ["LC_ALL", "LC_MESSAGES", "LANG"].iter().filter_map(|k| std::env::var(k).ok()).find(|v| !v.is_empty());
+        let tag = env.or_else(sys_locale::get_locale).unwrap_or_default();
+        Self::from_tag(&tag)
+    }
+
+    /// The language for a locale name or language tag: `it`, `it-IT`, `it_CH.UTF-8`…
+    pub fn from_tag(tag: &str) -> Self {
+        let primary = tag.split(['-', '_', '.', '@']).next().unwrap_or_default();
+        if primary.eq_ignore_ascii_case("it") { Lang::It } else { Lang::En }
+    }
+
+    /// An error of the diary folder, in this language.
+    pub fn describe(self, e: &diarycraft_file::Error) -> String {
+        use diarycraft_file::Error;
+        let it = self == Lang::It;
+        match e {
+            Error::Io { path, source } => format!("{}: {source}", path.display()),
+            Error::NotAFolder(p) if it => format!("{} non è una cartella", p.display()),
+            Error::NotAFolder(p) => format!("{} is not a folder", p.display()),
+            Error::Config { path, message } if it => {
+                format!("{}: le impostazioni del diario non si possono leggere ({message})", path.display())
+            }
+            Error::Config { path, message } => {
+                format!("{}: the diary settings cannot be read ({message})", path.display())
+            }
+            Error::TooNew { found } if it => format!(
+                "Questo diario è stato scritto da una versione più recente di DiaryCraft (formato {found}); questa versione legge fino al formato {}.",
+                diarycraft_model::FORMAT_VERSION
+            ),
+            Error::TooNew { found } => format!(
+                "This diary was written by a newer DiaryCraft (format {found}); this version reads up to format {}.",
+                diarycraft_model::FORMAT_VERSION
+            ),
+            Error::TooLarge { path } if it => format!("{}: la voce supera i 16 MB e non viene aperta", path.display()),
+            Error::TooLarge { path } => format!("{}: the entry is larger than 16 MB and is not opened", path.display()),
+        }
     }
 
     pub fn strings(self) -> &'static Strings {
@@ -60,6 +93,8 @@ pub struct Strings {
     pub conflict_copies: &'static str,
     pub reloaded: &'static str,
     pub legacy_encoding: &'static str,
+    /// Short dates in lists, as `chrono` formats them.
+    pub short_date: &'static str,
     pub months: [&'static str; 12],
     pub weekdays: [&'static str; 7],
     pub weekdays_long: [&'static str; 7],
@@ -98,6 +133,7 @@ pub static IT: Strings = Strings {
     conflict_copies: "copie di conflitto nel diario",
     reloaded: "Voce ricaricata: era stata cambiata altrove",
     legacy_encoding: "File in codifica Windows-1252: alla prossima modifica sarà salvato in UTF-8.",
+    short_date: "%d/%m/%Y",
     months: [
         "gennaio",
         "febbraio",
@@ -149,6 +185,7 @@ pub static EN: Strings = Strings {
     conflict_copies: "conflict copies in the diary",
     reloaded: "Entry reloaded: it was changed elsewhere",
     legacy_encoding: "File in Windows-1252 encoding: it will be saved in UTF-8 at the next change.",
+    short_date: "%Y-%m-%d",
     months: [
         "January",
         "February",

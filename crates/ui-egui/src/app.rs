@@ -29,6 +29,8 @@ pub struct Prefs {
     pub recent: Vec<PathBuf>,
     /// The diary open at the last exit, reopened at start.
     pub last: Option<PathBuf>,
+    /// The page is shown formatted instead of as Markdown to edit.
+    pub preview: bool,
 }
 
 /// The editor's text could not be written over the file, which changed on disk.
@@ -82,6 +84,8 @@ pub struct DiaryCraftApp {
     pub error: Option<String>,
     pub notice: Option<(String, f64)>,
     pub actions: Vec<Action>,
+    /// What the formatted view keeps between frames.
+    pub markdown_cache: egui_commonmark::CommonMarkCache,
     last_poll: f64,
     last_scan: f64,
     /// Fingerprint of the file the page shows, as last seen on disk; avoids re-reading it every poll.
@@ -122,6 +126,7 @@ impl DiaryCraftApp {
             error: None,
             notice: None,
             actions: Vec::new(),
+            markdown_cache: egui_commonmark::CommonMarkCache::default(),
             last_poll: 0.0,
             last_scan: 0.0,
             seen: None,
@@ -203,8 +208,8 @@ impl DiaryCraftApp {
         }
         let (Some(diary), Some(page)) = (&mut self.diary, &mut self.page) else { return };
         match diary.save(&page.loaded, &page.text, &computer_name(), &stamp()) {
-            Ok(Saved::Written { base }) => {
-                page.loaded.base = Some(base);
+            Ok(Saved::Written { base, path }) => {
+                page.loaded.written(base, path);
                 self.seen = Some(Some(base));
                 self.dirty_since = None;
                 self.error = None;

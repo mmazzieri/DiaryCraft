@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -74,6 +75,7 @@ private val PaleBlue = Color(0xFFB7C4DC)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         Diary.start(this)
         setContent {
             val colors = if (isSystemInDarkTheme()) darkColorScheme(primary = PaleBlue) else lightColorScheme(primary = Blue)
@@ -153,7 +155,7 @@ private fun Days(state: DiaryState, pick: () -> Unit, open: (String) -> Unit) {
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { open(LocalDate.now().toString()) },
-                icon = { Icon(Icons.Filled.Edit, null) },
+                icon = { Icon(Icons.Filled.Edit, stringResource(R.string.today)) },
                 text = { Text(stringResource(R.string.today)) },
             )
         },

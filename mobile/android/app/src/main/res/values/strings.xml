@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DiaryCraft</string>
+    <string name="welcome">Choose your diary folder, the one your computers share, or an empty one to start a diary. It can be on the phone itself or in a sync app that offers its folders to other apps.</string>
+    <string name="choose_folder">Choose the folder</string>
+    <string name="change_folder">Change folder</string>
+    <string name="reload">Read again</string>
+    <string name="today">Today</string>
+    <string name="other_day">Another day</string>
+    <string name="open">Open</string>
+    <string name="search">Search</string>
+    <string name="back">Back</string>
+    <string name="close">Close</string>
+    <string name="empty">No entries.</string>
+    <string name="write_here">Write here</string>
+    <string name="conflicts">Copies left by conflicting changes: %1$d. Compare them on a computer.</string>
+    <string name="conflict_saved">The entry changed elsewhere. Your text is kept in %1$s.</string>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DiaryCraft</string>
+    <string name="welcome">Scegli la cartella del diario, quella che i tuoi computer condividono, o una vuota per cominciarne uno. Può stare sul telefono o in un’app di sincronizzazione che offre le sue cartelle alle altre app.</string>
+    <string name="choose_folder">Scegli la cartella</string>
+    <string name="change_folder">Cambia cartella</string>
+    <string name="reload">Rileggi</string>
+    <string name="today">Oggi</string>
+    <string name="other_day">Un altro giorno</string>
+    <string name="open">Apri</string>
+    <string name="search">Cerca</string>
+    <string name="back">Indietro</string>
+    <string name="close">Chiudi</string>
+    <string name="empty">Nessuna voce.</string>
+    <string name="write_here">Scrivi qui</string>
+    <string name="conflicts">Copie lasciate da modifiche in conflitto: %1$d. Si confrontano su un computer.</string>
+    <string name="conflict_saved">La voce è cambiata altrove. Il tuo testo è conservato in %1$s.</string>
+</resources>

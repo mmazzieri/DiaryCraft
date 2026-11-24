@@ -19,6 +19,9 @@ Rust crates are listed with their licenses by `cargo deny list`; `cargo deny che
 | sys-locale | 0.3 | MIT OR Apache-2.0 |
 | craft-mcp-server (storytold/craft-libs) | 0.1 | MIT OR Apache-2.0 |
 | clap | 4 | MIT OR Apache-2.0 |
+| jni (Android only) | 0.21 | MIT OR Apache-2.0 |
+| AndroidX: Core, Activity, Lifecycle, Compose with Material 3 and its core icons (Gradle, not in this repository) | | Apache-2.0 |
+| `mobile/android/gradlew`, `gradlew.bat`, `gradle/wrapper/` (Gradle wrapper) | 8.14 | Apache-2.0 |
 | thiserror | 2 | MIT OR Apache-2.0 |
 | tempfile (tests only) | 3 | MIT OR Apache-2.0 |
 

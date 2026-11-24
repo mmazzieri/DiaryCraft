@@ -24,7 +24,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
-pub use encoding::Encoding;
+pub use encoding::{Encoding, decode, encode};
 
 /// Folder of DiaryCraft's own files inside the diary.
 pub const META_DIR: &str = ".diarycraft";
@@ -334,7 +334,7 @@ impl Diary {
 /// Keeps one naming per day: DiaryCraft's own wins over the 2014 ones. Returns the file that
 /// lost, which is listed with the conflict copies so that its text is not out of sight (a sync
 /// client may bring back a `.txt` entry that was moved to its `.md` name on another computer).
-fn add_entry(entries: &mut BTreeMap<NaiveDate, Layout>, r: EntryRef) -> Option<EntryRef> {
+pub fn add_entry(entries: &mut BTreeMap<NaiveDate, Layout>, r: EntryRef) -> Option<EntryRef> {
     let rank = |l: Layout| match l {
         Layout::Standard => 0,
         Layout::LegacyCompact => 1,

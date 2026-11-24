@@ -105,8 +105,9 @@ sed -e "s/@VERSION@/$VERSION/g" -e "s/@SHORT_VERSION@/$SHORT_VERSION/g" "$HERE/I
 plutil -lint "$APP/Contents/Info.plist"
 printf 'APPL????' >"$APP/Contents/PkgInfo"
 xattr -cr "$APP"
-sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP/Contents/MacOS/$APP_NAME"
+# The program first: signing the main executable seals the others in the bundle.
 sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP/Contents/MacOS/$PKG-cli"
+sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP/Contents/MacOS/$APP_NAME"
 sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP"
 codesign --verify --strict --deep --verbose=2 "$APP"
 if [[ "$NOTARIZE" = 1 ]]; then

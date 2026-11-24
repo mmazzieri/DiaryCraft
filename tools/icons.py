@@ -72,6 +72,20 @@ SVG = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {S} {S}">
 """
 
 
+def mobile() -> None:
+    """The phone apps' icons; Apple's has no transparency and no rounded corners."""
+    res = ROOT / "mobile" / "android" / "app" / "src" / "main" / "res"
+    for name, n in (("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)):
+        d = res / f"mipmap-{name}"
+        d.mkdir(parents=True, exist_ok=True)
+        draw(n, margin=0.04).save(d / "ic_launcher.png", optimize=True)
+    ios = ROOT / "mobile" / "ios" / "DiaryCraft" / "Assets.xcassets" / "AppIcon.appiconset"
+    square = Image.new("RGB", (S, S), BG[:3])
+    icon = draw(S)
+    square.paste(icon, mask=icon.getchannel("A"))
+    square.save(ios / "icon-1024.png", optimize=True)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "diarycraft.svg").write_text(SVG)
@@ -83,6 +97,7 @@ def main() -> None:
     draw(1024, margin=100 / 1024).save(OUT / "diarycraft-1024.png", optimize=True)
     draw(256).save(OUT / "diarycraft.ico", sizes=[(n, n) for n in (16, 20, 24, 32, 40, 48, 64, 128, 256)])
     (OUT / "window-64.rgba").write_bytes(draw(64).tobytes())
+    mobile()
 
 
 if __name__ == "__main__":

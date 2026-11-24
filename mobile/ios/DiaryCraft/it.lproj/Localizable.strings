@@ -1,0 +1,13 @@
+"Choose your diary folder, the one your computers share, or an empty one to start a diary. It can be in iCloud Drive, in a sync app that offers its folders in Files, or on this device." = "Scegli la cartella del diario, quella che i tuoi computer condividono, o una vuota per cominciarne uno. Può stare in iCloud Drive, in un’app di sincronizzazione che offre le sue cartelle in File, o su questo dispositivo.";
+"Choose the folder" = "Scegli la cartella";
+"Change folder" = "Cambia cartella";
+"The folder cannot be opened." = "La cartella non si può aprire.";
+"Something went wrong" = "Qualcosa non ha funzionato";
+"Close" = "Chiudi";
+"The entry changed elsewhere" = "La voce è cambiata altrove";
+"Your text is kept in %@." = "Il tuo testo è conservato in %@.";
+"Copies left by conflicting changes: %lld. Compare them on a computer." = "Copie lasciate da modifiche in conflitto: %lld. Si confrontano su un computer.";
+"No entries." = "Nessuna voce.";
+"Another day" = "Un altro giorno";
+"Today" = "Oggi";
+"Open" = "Apri";

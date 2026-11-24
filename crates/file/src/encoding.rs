@@ -5,7 +5,8 @@
 //! in UTF-8 the first time they are changed. A byte-order mark is kept if the file had one.
 
 /// How a file was encoded.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Encoding {
     Utf8,
     /// UTF-8 with a byte-order mark, written back with it.
@@ -25,6 +26,7 @@ const HIGH: [char; 32] = [
     '\u{17E}', '\u{178}',
 ];
 
+/// The text of a file, and how it was encoded.
 pub fn decode(bytes: &[u8]) -> (String, Encoding) {
     if let Some(rest) = bytes.strip_prefix(BOM)
         && let Ok(text) = std::str::from_utf8(rest)
@@ -44,6 +46,7 @@ pub fn decode(bytes: &[u8]) -> (String, Encoding) {
     (text, Encoding::Windows1252)
 }
 
+/// The bytes of a text, encoded as the file it came from.
 pub fn encode(text: &str, encoding: Encoding) -> Vec<u8> {
     match encoding {
         Encoding::Utf8Bom => [BOM, text.as_bytes()].concat(),

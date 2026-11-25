@@ -50,3 +50,14 @@ fn links_of_the_formatted_view_stay_in_the_diary() {
     assert_eq!(resolve_link("../../../etc/passwd", dir, root), None);
     assert_eq!(resolve_link("file:///etc/passwd", dir, root), None);
 }
+
+#[test]
+fn theme_follows_the_system_until_chosen() {
+    use crate::app::{Prefs, Theme};
+    // Preferences saved before the theme existed open with the system's colours.
+    let old: Prefs = serde_json::from_str(r#"{"preview":true}"#).unwrap();
+    assert_eq!(old.theme, Theme::System);
+    let mut prefs = Prefs { theme: Theme::Dark, ..Prefs::default() };
+    prefs = serde_json::from_str(&serde_json::to_string(&prefs).unwrap()).unwrap();
+    assert_eq!(prefs.theme, Theme::Dark);
+}

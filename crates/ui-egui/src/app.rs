@@ -38,6 +38,27 @@ pub struct Prefs {
     /// while the app is open, and leaving with unsaved pages asks first. Off by default, so
     /// autosave is on.
     pub manual_save: bool,
+    /// Light or dark colours, or those of the system (the default).
+    pub theme: Theme,
+}
+
+/// The colours of the window: those of the system, or always light or dark.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Theme {
+    #[default]
+    System,
+    Light,
+    Dark,
+}
+
+impl Theme {
+    pub fn preference(self) -> egui::ThemePreference {
+        match self {
+            Theme::System => egui::ThemePreference::System,
+            Theme::Light => egui::ThemePreference::Light,
+            Theme::Dark => egui::ThemePreference::Dark,
+        }
+    }
 }
 
 /// The editor's text could not be written over the file, which changed on disk.
@@ -81,6 +102,7 @@ pub enum Action {
     UseDisk,
     KeepMine,
     SetLang(Lang),
+    SetTheme(Theme),
     Search,
     Save,
     Quit,
@@ -163,6 +185,7 @@ impl DiaryCraftApp {
             seen: None,
             system_lang: Lang::from_system(),
         };
+        cc.egui_ctx.set_theme(app.prefs.theme.preference());
         if let Some(path) = open.or_else(|| app.prefs.last.clone()) {
             app.open(&path);
         }
@@ -485,6 +508,10 @@ impl DiaryCraftApp {
                 Action::UseDisk => self.use_disk(),
                 Action::KeepMine => self.keep_mine(),
                 Action::SetLang(lang) => self.prefs.lang = Some(lang),
+                Action::SetTheme(theme) => {
+                    self.prefs.theme = theme;
+                    ctx.set_theme(theme.preference());
+                }
                 Action::Search => self.run_search(),
                 Action::Save => self.save_all(),
                 Action::Quit => self.leave(Leave::Quit, ctx),

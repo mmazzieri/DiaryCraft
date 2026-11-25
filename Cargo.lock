@@ -908,6 +908,7 @@ dependencies = [
  "egui_commonmark",
  "rfd",
  "serde",
+ "serde_json",
  "sys-locale",
 ]
 

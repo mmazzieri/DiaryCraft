@@ -22,3 +22,6 @@ egui_commonmark.workspace = true
 rfd.workspace = true
 serde.workspace = true
 sys-locale.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

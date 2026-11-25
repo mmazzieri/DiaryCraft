@@ -1,6 +1,6 @@
 //! Drawing: the top bar, the calendar and the lists beside it, the page, the status bar.
 
-use crate::app::{Action, DiaryCraftApp, today};
+use crate::app::{Action, DiaryCraftApp, Theme, today};
 use crate::folders::suggested_diary as suggested_folder;
 use crate::i18n::Lang;
 use chrono::Datelike;
@@ -31,6 +31,16 @@ pub fn top_bar(ui: &mut egui::Ui, app: &mut DiaryCraftApp) {
                 for (lang, name) in [(Lang::It, "Italiano"), (Lang::En, "English")] {
                     if ui.button(name).clicked() {
                         app.actions.push(Action::SetLang(lang));
+                        ui.close();
+                    }
+                }
+            });
+            ui.menu_button(s.theme, |ui| {
+                for (theme, name) in
+                    [(Theme::System, s.theme_system), (Theme::Light, s.theme_light), (Theme::Dark, s.theme_dark)]
+                {
+                    if ui.radio(app.prefs.theme == theme, name).clicked() {
+                        app.actions.push(Action::SetTheme(theme));
                         ui.close();
                     }
                 }

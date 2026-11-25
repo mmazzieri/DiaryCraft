@@ -4,7 +4,7 @@ DiaryCraft is a diary that keeps each day as a plain text file. You choose a fol
 
 It is a local desktop app written in Rust with egui. The folder can be on this computer, on a shared drive, or in a folder synced by OneDrive, Google Drive, Dropbox or Syncthing to write from several computers.
 
-> **Status:** 0.2, in development. The plan is in [docs/plan.md](docs/plan.md) (in Italian).
+> **Status:** 0.3, in development. The plan is in [docs/plan.md](docs/plan.md) (in Italian).
 
 ## Install
 

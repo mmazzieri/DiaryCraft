@@ -67,7 +67,7 @@ cargo run --release -p diarycraft -- path/to/diary
 cargo xtask ci   # fmt, clippy -D warnings, tests
 ```
 
-The packages are built by `packaging/linux/package.sh`, `packaging/macos/package.sh` and `packaging/windows/package.ps1`, and by the Release workflow for every pull request that touches them; a tag `vX.Y.Z` opens a draft release with all of them. The app icon is drawn by `tools/icons.py` (Pillow).
+The packages are built by `packaging/linux/package.sh`, `packaging/macos/package.sh` and `packaging/windows/package.ps1`, and by the Release workflow for every pull request that touches them; a tag `vX.Y.Z` opens a draft release with all of them. The app icon's sizes are written by `tools/icons.py` (Pillow) from `assets/app-icon/diarycraft-source.png`.
 
 ## License
 

@@ -12,6 +12,7 @@ Rust crates are listed with their licenses by `cargo deny list`; `cargo deny che
 |---|---|---|
 | egui, eframe (and egui-wgpu, egui-winit) | 0.37 | MIT OR Apache-2.0 |
 | rfd | 0.17.2 | MIT |
+| winresource (build only, Windows: the icon inside the executable) | 0.1 | MIT |
 | egui_commonmark (with pulldown-cmark, egui_extras) | 0.26 | MIT OR Apache-2.0 (pulldown-cmark: MIT) |
 | serde, serde_json | 1 | MIT OR Apache-2.0 |
 | chrono | 0.4 | MIT OR Apache-2.0 |

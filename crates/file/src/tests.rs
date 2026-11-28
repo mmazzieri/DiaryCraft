@@ -251,6 +251,6 @@ fn the_first_day_of_the_week_keeps_what_another_computer_wrote() {
     fs::write(&config, "not json").unwrap();
     assert!(matches!(mine.set_week_start(WeekStart::Monday), Err(Error::Config { .. })));
     assert_eq!(fs::read_to_string(&config).unwrap(), "not json");
-    mine.reload_config();
+    assert!(matches!(mine.reload_config(), Err(Error::Config { .. })));
     assert_eq!(mine.config().week_start(), WeekStart::Sunday);
 }

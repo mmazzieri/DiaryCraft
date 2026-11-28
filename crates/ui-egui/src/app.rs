@@ -408,8 +408,9 @@ impl DiaryCraftApp {
         if time - self.last_scan >= SCAN_EVERY {
             self.last_scan = time;
             if let Some(diary) = &mut self.diary {
-                // The first day of the week may have been changed on another computer.
-                diary.reload_config();
+                // The first day of the week may have been changed on another computer. A settings
+                // file that cannot be read now keeps the settings as they were.
+                let _ = diary.reload_config();
                 if let Err(e) = diary.scan() {
                     self.error = Some(self.lang().describe(&e));
                 }

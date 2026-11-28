@@ -232,7 +232,7 @@ impl Session {
                     }
                     None => {
                         self.check(&config, Access::Read)?;
-                        self.diary.reload_config();
+                        self.diary.reload_config()?;
                     }
                 }
                 Ok(json!({"week_start": self.diary.config().week_start()}))

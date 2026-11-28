@@ -45,6 +45,9 @@ fn settings_change_the_first_day_of_the_week() {
     let again = Session::open(dir.path(), None).unwrap().run(Command::Settings { week_start: None }, &ctx()).unwrap();
     assert_eq!(again["week_start"], "sunday");
     assert!(serde_json::from_value::<Command>(json!({"cmd": "settings", "week_start": "friday"})).is_err());
+    // A settings file broken after the diary was opened is an error, not the old answer.
+    fs::write(dir.path().join(".diarycraft/config.json"), "not json").unwrap();
+    assert!(run(&mut s, json!({"cmd": "settings"})).is_err());
 }
 
 #[test]

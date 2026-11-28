@@ -846,6 +846,7 @@ dependencies = [
  "chrono",
  "diarycraft-engine",
  "diarycraft-file",
+ "diarycraft-model",
  "serde",
  "serde_json",
  "tempfile",

@@ -37,6 +37,17 @@ fn write_needs_the_version_that_was_read() {
 }
 
 #[test]
+fn settings_change_the_first_day_of_the_week() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut s = Session::open(dir.path(), None).unwrap();
+    assert_eq!(run(&mut s, json!({"cmd": "settings"})).unwrap()["week_start"], "monday");
+    run(&mut s, json!({"cmd": "settings", "week_start": "sunday"})).unwrap();
+    let again = Session::open(dir.path(), None).unwrap().run(Command::Settings { week_start: None }, &ctx()).unwrap();
+    assert_eq!(again["week_start"], "sunday");
+    assert!(serde_json::from_value::<Command>(json!({"cmd": "settings", "week_start": "friday"})).is_err());
+}
+
+#[test]
 fn append_list_search_info() {
     let dir = tempfile::tempdir().unwrap();
     let mut s = Session::open(dir.path(), None).unwrap();

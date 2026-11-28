@@ -51,5 +51,46 @@ impl Default for DiaryConfig {
     }
 }
 
+/// Key of the first day of the week in `.diarycraft/config.json`.
+const WEEK_START_KEY: &str = "weekStart";
+
+impl DiaryConfig {
+    /// The day the calendar's weeks begin with. Monday when the file says nothing, or names a day
+    /// this version does not offer; that value is kept as it is until the owner chooses another.
+    pub fn week_start(&self) -> WeekStart {
+        self.extra.get(WEEK_START_KEY).and_then(|v| WeekStart::deserialize(v).ok()).unwrap_or_default()
+    }
+
+    pub fn set_week_start(&mut self, start: WeekStart) {
+        self.extra.insert(WEEK_START_KEY.to_owned(), serde_json::Value::String(start.as_str().to_owned()));
+    }
+}
+
+/// The day the weeks of the calendar begin with, the same on every computer that opens the diary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WeekStart {
+    #[default]
+    Monday,
+    Sunday,
+}
+
+impl WeekStart {
+    pub fn weekday(self) -> chrono::Weekday {
+        match self {
+            WeekStart::Monday => chrono::Weekday::Mon,
+            WeekStart::Sunday => chrono::Weekday::Sun,
+        }
+    }
+
+    /// The name written in the settings file.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            WeekStart::Monday => "monday",
+            WeekStart::Sunday => "sunday",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests;

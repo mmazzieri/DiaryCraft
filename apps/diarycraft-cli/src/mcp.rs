@@ -90,6 +90,16 @@ impl Tools for DiaryTools {
                 object(json!({}), &[]),
                 Effect::ReadOnly,
             ),
+            tool(
+                "settings",
+                "Diary settings",
+                "The settings shared by every computer that opens the diary. With `week_start`, changes the first day of the calendar's weeks.",
+                object(
+                    json!({"week_start": {"type": "string", "enum": ["monday", "sunday"], "description": "First day of the week"}}),
+                    &[],
+                ),
+                Effect::Files,
+            ),
         ]
     }
 

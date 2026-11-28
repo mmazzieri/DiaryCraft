@@ -1,6 +1,6 @@
 //! The month shown by the calendar.
 
-use chrono::{Datelike, Months, NaiveDate};
+use chrono::{Datelike, Months, NaiveDate, Weekday};
 
 /// First day of the month of `date`.
 pub fn month_start(date: NaiveDate) -> NaiveDate {
@@ -17,11 +17,22 @@ pub fn add_months(date: NaiveDate, n: i32) -> NaiveDate {
     shifted.unwrap_or(date)
 }
 
-/// The weeks of the month of `date`, Monday first: six rows of seven cells, `None` outside the
-/// month. Six rows always, so the calendar does not change height between months.
-pub fn month_grid(date: NaiveDate) -> [[Option<NaiveDate>; 7]; 6] {
+/// The seven days of a week that begins with `start`, in order: the calendar's header.
+pub fn week_days(start: Weekday) -> [Weekday; 7] {
+    let mut days = [start; 7];
+    let mut day = start;
+    for slot in days.iter_mut() {
+        *slot = day;
+        day = day.succ();
+    }
+    days
+}
+
+/// The weeks of the month of `date`, each beginning with `start`: six rows of seven cells, `None`
+/// outside the month. Six rows always, so the calendar does not change height between months.
+pub fn month_grid(date: NaiveDate, start: Weekday) -> [[Option<NaiveDate>; 7]; 6] {
     let first = month_start(date);
-    let lead = first.weekday().num_days_from_monday();
+    let lead = (first.weekday().num_days_from_monday() + 7 - start.num_days_from_monday()) % 7;
     let mut grid = [[None; 7]; 6];
     let mut day = first;
     let mut cell = lead as usize;

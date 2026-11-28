@@ -4,7 +4,8 @@ use crate::app::{Action, DiaryCraftApp, Theme, today};
 use crate::folders::suggested_diary as suggested_folder;
 use crate::i18n::Lang;
 use chrono::Datelike;
-use diarycraft_engine::calendar::{add_months, month_grid};
+use diarycraft_engine::calendar::{add_months, month_grid, week_days};
+use diarycraft_model::WeekStart;
 
 pub fn top_bar(ui: &mut egui::Ui, app: &mut DiaryCraftApp) {
     let s = app.strings();
@@ -44,6 +45,17 @@ pub fn top_bar(ui: &mut egui::Ui, app: &mut DiaryCraftApp) {
                         ui.close();
                     }
                 }
+            });
+            let week_start = app.diary.as_ref().map(|d| d.config().week_start());
+            ui.add_enabled_ui(week_start.is_some(), |ui| {
+                ui.menu_button(s.week_start, |ui| {
+                    for (start, name) in [(WeekStart::Monday, s.monday), (WeekStart::Sunday, s.sunday)] {
+                        if ui.radio(week_start == Some(start), name).on_hover_text(s.week_start_hint).clicked() {
+                            app.actions.push(Action::SetWeekStart(start));
+                            ui.close();
+                        }
+                    }
+                });
             });
             ui.separator();
             if ui.button(s.quit).clicked() {
@@ -126,12 +138,14 @@ fn calendar(ui: &mut egui::Ui, app: &mut DiaryCraftApp) {
     });
     let selected = app.page.as_ref().map(|p| p.loaded.date);
     let now = today();
+    let start = app.diary.as_ref().map(|d| d.config().week_start()).unwrap_or_default().weekday();
     egui::Grid::new("month").num_columns(7).spacing([2.0, 2.0]).show(ui, |ui| {
-        for wd in s.weekdays {
-            ui.centered_and_justified(|ui| ui.label(egui::RichText::new(wd).weak().small()));
+        for wd in week_days(start) {
+            let name = s.weekdays.get(wd.num_days_from_monday() as usize).copied().unwrap_or("");
+            ui.centered_and_justified(|ui| ui.label(egui::RichText::new(name).weak().small()));
         }
         ui.end_row();
-        for week in month_grid(month) {
+        for week in month_grid(month, start) {
             for cell in week {
                 match cell {
                     None => {

@@ -31,7 +31,7 @@ On macOS, drag DiaryCraft to Applications. Until a release is signed with a Deve
 - **Attach file…** copies files into the day's attachments folder (`2026/11/2026-11-24/`) and adds a link to them in the text.
 - The editor colours the Markdown as you type (headings, bold, italic, code, links, lists, quotes, the front matter). **Preview** shows the entry formatted, with working links to its attachments; **Write** goes back to the text.
 - Entries from the 2014 LogBook (`year/month/DD.txt` or `year/month/YYYYMMDD.txt`, also in Windows-1252) are read as they are. The first time you change one, it becomes a Markdown entry: the file is renamed to `year/month/YYYY-MM-DD.md` and saved in UTF-8. Entries you don't change stay as they are.
-- **File › First day of the week** starts the calendar's weeks on Monday or Sunday. The choice is kept in the diary folder (`.diarycraft/config.json`), so every computer that opens the diary shows the same calendar; `diarycraft-cli settings --week-start sunday` does the same from the command line.
+- **File › First day of the week** starts the calendar's weeks on Monday or Sunday. The choice is kept in the diary folder (`.diarycraft/config.json`), so every computer that opens the diary shows the same calendar; `diarycraft-cli --diary <diary folder> settings --week-start sunday` does the same from the command line.
 - Italian and English: the language of the system at first (on Windows and macOS the language of the user interface, elsewhere `LC_ALL`, `LC_MESSAGES` or `LANG`), or the one chosen in **File › Language**.
 
 ## Your text is never lost

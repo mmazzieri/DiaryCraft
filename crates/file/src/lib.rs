@@ -145,21 +145,32 @@ impl Diary {
     }
 
     /// Changes the first day of the week for every computer that opens the diary. The settings
-    /// file is read again first, so that what another computer wrote there meanwhile is kept.
+    /// file is read again first, so that what another computer wrote there meanwhile is kept, and
+    /// read once more just before it is replaced: if it changed in between, the change starts again
+    /// from the new version, so a setting written by somebody else is not lost.
     pub fn set_week_start(&mut self, start: WeekStart) -> Result<()> {
-        let mut config = read_config(&self.root)?.unwrap_or_default();
-        config.set_week_start(start);
-        write_config(&self.root, &config)?;
-        self.config = config;
-        Ok(())
+        let path = self.root.join(META_DIR).join(CONFIG_FILE);
+        for _ in 0..CONFIG_TRIES {
+            let before = read_config_bytes(&path)?;
+            let mut config = parse_config(&path, before.as_deref())?.unwrap_or_default();
+            config.set_week_start(start);
+            if read_config_bytes(&path)? != before {
+                continue;
+            }
+            write_config(&self.root, &config)?;
+            self.config = config;
+            return Ok(());
+        }
+        Err(Error::Config { path, message: "the settings kept changing while they were written; try again".into() })
     }
 
-    /// Reads the settings file again, for a change made on another computer. A file that cannot
-    /// be read now leaves the settings as they were.
-    pub fn reload_config(&mut self) {
-        if let Ok(Some(config)) = read_config(&self.root) {
+    /// Reads the settings file again, for a change made on another computer. When it cannot be
+    /// read the settings stay as they were, and the error says why.
+    pub fn reload_config(&mut self) -> Result<()> {
+        if let Some(config) = read_config(&self.root)? {
             self.config = config;
         }
+        Ok(())
     }
 
     /// Looks through the folder again for entries and conflict copies.
@@ -380,16 +391,29 @@ fn read_bytes(path: &Path) -> Result<Option<Vec<u8>>> {
 
 /// Writes a file through a temporary file in the same folder and a rename, so that a crash or a
 /// full disk never leaves half a file in place of the entry.
+/// How many times a settings change starts again when the file keeps changing under it.
+const CONFIG_TRIES: usize = 3;
+
 /// The settings of the diary at `root`, or `None` when it has no settings file yet.
 fn read_config(root: &Path) -> Result<Option<DiaryConfig>> {
     let path = root.join(META_DIR).join(CONFIG_FILE);
-    let bytes = match fs::read(&path) {
-        Ok(bytes) => bytes,
-        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(None),
-        Err(source) => return Err(Error::Io { path, source }),
-    };
+    let bytes = read_config_bytes(&path)?;
+    parse_config(&path, bytes.as_deref())
+}
+
+/// The bytes of the settings file, or `None` when there is none.
+fn read_config_bytes(path: &Path) -> Result<Option<Vec<u8>>> {
+    match fs::read(path) {
+        Ok(bytes) => Ok(Some(bytes)),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
+        Err(source) => Err(Error::Io { path: path.to_owned(), source }),
+    }
+}
+
+fn parse_config(path: &Path, bytes: Option<&[u8]>) -> Result<Option<DiaryConfig>> {
+    let Some(bytes) = bytes else { return Ok(None) };
     let config: DiaryConfig =
-        serde_json::from_slice(&bytes).map_err(|e| Error::Config { path: path.clone(), message: e.to_string() })?;
+        serde_json::from_slice(bytes).map_err(|e| Error::Config { path: path.to_owned(), message: e.to_string() })?;
     if config.format_version > FORMAT_VERSION {
         return Err(Error::TooNew { found: config.format_version });
     }

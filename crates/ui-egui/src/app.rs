@@ -6,6 +6,7 @@ use chrono::{Local, NaiveDate};
 use diarycraft_engine::search::{Hit, search};
 use diarycraft_engine::text;
 use diarycraft_file::{Diary, Encoding, Fingerprint, Loaded, Saved};
+use diarycraft_model::WeekStart;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -103,6 +104,7 @@ pub enum Action {
     KeepMine,
     SetLang(Lang),
     SetTheme(Theme),
+    SetWeekStart(WeekStart),
     Search,
     Save,
     Quit,
@@ -405,10 +407,12 @@ impl DiaryCraftApp {
         }
         if time - self.last_scan >= SCAN_EVERY {
             self.last_scan = time;
-            if let Some(diary) = &mut self.diary
-                && let Err(e) = diary.scan()
-            {
-                self.error = Some(self.lang().describe(&e));
+            if let Some(diary) = &mut self.diary {
+                // The first day of the week may have been changed on another computer.
+                diary.reload_config();
+                if let Err(e) = diary.scan() {
+                    self.error = Some(self.lang().describe(&e));
+                }
             }
             self.refresh_recent();
         }
@@ -511,6 +515,13 @@ impl DiaryCraftApp {
                 Action::SetTheme(theme) => {
                     self.prefs.theme = theme;
                     ctx.set_theme(theme.preference());
+                }
+                Action::SetWeekStart(start) => {
+                    if let Some(diary) = &mut self.diary
+                        && let Err(e) = diary.set_week_start(start)
+                    {
+                        self.error = Some(self.lang().describe(&e));
+                    }
                 }
                 Action::Search => self.run_search(),
                 Action::Save => self.save_all(),

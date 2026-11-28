@@ -6,7 +6,7 @@ mod mcp;
 use chrono::{Local, NaiveDate};
 use clap::{Parser, Subcommand};
 use diarycraft_commands::confine::Confinement;
-use diarycraft_commands::{Command, Ctx, Session};
+use diarycraft_commands::{Command, Ctx, Session, WeekStart};
 use serde_json::Value;
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -74,6 +74,12 @@ enum Cmd {
     },
     /// Copies left by conflicting changes
     Conflicts,
+    /// The diary's settings, shared by every computer; with an option, change it
+    Settings {
+        /// First day of the calendar's weeks
+        #[arg(long, value_parser = week_start, value_name = "monday|sunday")]
+        week_start: Option<WeekStart>,
+    },
     /// Serve these commands to an agent (MCP on standard input and output)
     Mcp {
         /// Folder the agent may read files to attach from (repeatable)
@@ -91,6 +97,14 @@ fn date(s: &str) -> Result<NaiveDate, String> {
         return Ok(Local::now().date_naive());
     }
     NaiveDate::parse_from_str(s, "%Y-%m-%d").map_err(|_| "a day is YYYY-MM-DD, or today".to_owned())
+}
+
+fn week_start(s: &str) -> Result<WeekStart, String> {
+    match s {
+        "monday" => Ok(WeekStart::Monday),
+        "sunday" => Ok(WeekStart::Sunday),
+        _ => Err("the week starts on monday or sunday".to_owned()),
+    }
 }
 
 /// The computer and the time, for the name of a conflict copy.
@@ -131,6 +145,7 @@ fn run(cli: Cli) -> Result<(), String> {
         Cmd::Search { words, limit } => Command::Search { query: words.join(" "), limit },
         Cmd::Attach { date, file } => Command::Attach { date, file },
         Cmd::Conflicts => Command::Conflicts,
+        Cmd::Settings { week_start } => Command::Settings { week_start },
     };
     let mut session = Session::open(&cli.diary, None).map_err(|e| e.to_string())?;
     let answer = session.run(command.clone(), &ctx()).map_err(|e| e.to_string())?;

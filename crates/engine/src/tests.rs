@@ -1,8 +1,8 @@
-use crate::calendar::{add_months, month_grid};
+use crate::calendar::{add_months, month_grid, week_days};
 use crate::layout::{conflict_copy, conflict_name, parse, parts, year_month};
 use crate::search::search;
 use crate::text::{split_front_matter, title, word_count};
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate, Weekday};
 use diarycraft_model::Layout;
 
 fn d(y: i32, m: u32, day: u32) -> NaiveDate {
@@ -88,7 +88,7 @@ fn search_is_safe_with_multibyte_text() {
 
 #[test]
 fn month_grid_starts_on_monday() {
-    let grid = month_grid(d(2026, 11, 24));
+    let grid = month_grid(d(2026, 11, 24), Weekday::Mon);
     // 1 November 2026 is a Sunday.
     assert_eq!(grid[0][6], Some(d(2026, 11, 1)));
     assert_eq!(grid[0][0], None);
@@ -97,6 +97,28 @@ fn month_grid_starts_on_monday() {
     assert_eq!(days, 30);
     assert_eq!(add_months(d(2026, 1, 31), 1), d(2026, 2, 28));
     assert_eq!(add_months(d(2026, 1, 31), -1), d(2025, 12, 31));
+}
+
+#[test]
+fn month_grid_follows_the_first_day_of_the_week() {
+    // November 2026 begins on a Sunday: the first cell with weeks from Sunday.
+    let grid = month_grid(d(2026, 11, 24), Weekday::Sun);
+    assert_eq!(grid[0][0], Some(d(2026, 11, 1)));
+    assert_eq!(week_days(Weekday::Sun)[0], Weekday::Sun);
+    // Each column holds one weekday, the header's, in every month of a year.
+    for start in [Weekday::Mon, Weekday::Sun] {
+        let header = week_days(start);
+        for month in 1..=12 {
+            let grid = month_grid(d(2027, month, 1), start);
+            let length = (add_months(d(2027, month, 1), 1) - d(2027, month, 1)).num_days();
+            assert_eq!(grid.iter().flatten().flatten().count() as i64, length);
+            for week in grid {
+                for (cell, wd) in week.iter().zip(header) {
+                    assert!(cell.is_none_or(|day| day.weekday() == wd));
+                }
+            }
+        }
+    }
 }
 
 mod markdown {

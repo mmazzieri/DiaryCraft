@@ -17,7 +17,7 @@ mod encoding;
 
 use chrono::NaiveDate;
 use diarycraft_engine::layout;
-use diarycraft_model::{DiaryConfig, EntryRef, FORMAT_VERSION, Layout};
+use diarycraft_model::{DiaryConfig, EntryRef, FORMAT_VERSION, Layout, WeekStart};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fs;
@@ -123,26 +123,13 @@ impl Diary {
         if !meta.is_dir() {
             return Err(Error::NotAFolder(root.to_owned()));
         }
-        let config_path = root.join(META_DIR).join(CONFIG_FILE);
-        let config = match fs::read(&config_path) {
-            Ok(bytes) => {
-                let config: DiaryConfig = serde_json::from_slice(&bytes)
-                    .map_err(|e| Error::Config { path: config_path.clone(), message: e.to_string() })?;
-                if config.format_version > FORMAT_VERSION {
-                    return Err(Error::TooNew { found: config.format_version });
-                }
-                config
-            }
-            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+        let config = match read_config(root)? {
+            Some(config) => config,
+            None => {
                 let config = DiaryConfig::default();
-                let dir = root.join(META_DIR);
-                fs::create_dir_all(&dir).map_err(io_err(&dir))?;
-                let text = serde_json::to_vec_pretty(&config)
-                    .map_err(|e| Error::Config { path: config_path.clone(), message: e.to_string() })?;
-                write_atomic(&config_path, &text)?;
+                write_config(root, &config)?;
                 config
             }
-            Err(e) => return Err(Error::Io { path: config_path, source: e }),
         };
         let mut diary = Self { root: root.to_owned(), config, entries: BTreeMap::new(), copies: Vec::new() };
         diary.scan()?;
@@ -155,6 +142,24 @@ impl Diary {
 
     pub fn config(&self) -> &DiaryConfig {
         &self.config
+    }
+
+    /// Changes the first day of the week for every computer that opens the diary. The settings
+    /// file is read again first, so that what another computer wrote there meanwhile is kept.
+    pub fn set_week_start(&mut self, start: WeekStart) -> Result<()> {
+        let mut config = read_config(&self.root)?.unwrap_or_default();
+        config.set_week_start(start);
+        write_config(&self.root, &config)?;
+        self.config = config;
+        Ok(())
+    }
+
+    /// Reads the settings file again, for a change made on another computer. A file that cannot
+    /// be read now leaves the settings as they were.
+    pub fn reload_config(&mut self) {
+        if let Ok(Some(config)) = read_config(&self.root) {
+            self.config = config;
+        }
     }
 
     /// Looks through the folder again for entries and conflict copies.
@@ -375,6 +380,29 @@ fn read_bytes(path: &Path) -> Result<Option<Vec<u8>>> {
 
 /// Writes a file through a temporary file in the same folder and a rename, so that a crash or a
 /// full disk never leaves half a file in place of the entry.
+/// The settings of the diary at `root`, or `None` when it has no settings file yet.
+fn read_config(root: &Path) -> Result<Option<DiaryConfig>> {
+    let path = root.join(META_DIR).join(CONFIG_FILE);
+    let bytes = match fs::read(&path) {
+        Ok(bytes) => bytes,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(source) => return Err(Error::Io { path, source }),
+    };
+    let config: DiaryConfig =
+        serde_json::from_slice(&bytes).map_err(|e| Error::Config { path: path.clone(), message: e.to_string() })?;
+    if config.format_version > FORMAT_VERSION {
+        return Err(Error::TooNew { found: config.format_version });
+    }
+    Ok(Some(config))
+}
+
+fn write_config(root: &Path, config: &DiaryConfig) -> Result<()> {
+    let path = root.join(META_DIR).join(CONFIG_FILE);
+    let text =
+        serde_json::to_vec_pretty(config).map_err(|e| Error::Config { path: path.clone(), message: e.to_string() })?;
+    write_atomic(&path, &text)
+}
+
 fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
     let dir = path.parent().unwrap_or(Path::new("."));
     fs::create_dir_all(dir).map_err(io_err(dir))?;

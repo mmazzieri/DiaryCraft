@@ -234,3 +234,23 @@ fn opening_a_file_is_refused() {
     fs::write(&file, "x").unwrap();
     assert!(matches!(Diary::open(&file), Err(Error::NotAFolder(_))));
 }
+
+#[test]
+fn the_first_day_of_the_week_keeps_what_another_computer_wrote() {
+    use diarycraft_model::WeekStart;
+    let dir = tempfile::tempdir().unwrap();
+    let config = dir.path().join(META_DIR).join("config.json");
+    let mut mine = Diary::open(dir.path()).unwrap();
+    // Another computer adds a setting after this one opened the diary.
+    fs::write(&config, r#"{"format":"diarycraft","formatVersion":1,"future":true}"#).unwrap();
+    mine.set_week_start(WeekStart::Sunday).unwrap();
+    let other = Diary::open(dir.path()).unwrap();
+    assert_eq!(other.config().week_start(), WeekStart::Sunday);
+    assert!(other.config().extra.contains_key("future"));
+    // A settings file that cannot be read is never written over.
+    fs::write(&config, "not json").unwrap();
+    assert!(matches!(mine.set_week_start(WeekStart::Monday), Err(Error::Config { .. })));
+    assert_eq!(fs::read_to_string(&config).unwrap(), "not json");
+    mine.reload_config();
+    assert_eq!(mine.config().week_start(), WeekStart::Sunday);
+}

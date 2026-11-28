@@ -11,6 +11,7 @@ use chrono::NaiveDate;
 use confine::{Access, Confinement};
 use diarycraft_engine::{search, text};
 use diarycraft_file::{Diary, Fingerprint, Loaded, Saved};
+pub use diarycraft_model::WeekStart;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
@@ -75,6 +76,11 @@ pub enum Command {
     },
     /// Copies left by conflicting changes.
     Conflicts,
+    /// The settings shared by every computer that opens the diary; with a value, changes it.
+    Settings {
+        #[serde(default)]
+        week_start: Option<WeekStart>,
+    },
 }
 
 /// Who runs the commands and when: the diary has no clock of its own.
@@ -216,6 +222,20 @@ impl Session {
                     .map(|(date, path)| json!({"date": date, "path": path.display().to_string()}))
                     .collect();
                 Ok(json!({"conflicts": copies}))
+            }
+            Command::Settings { week_start } => {
+                let config = self.diary.root().join(diarycraft_file::META_DIR).join("config.json");
+                match week_start {
+                    Some(start) => {
+                        self.check(&config, Access::Write)?;
+                        self.diary.set_week_start(start)?;
+                    }
+                    None => {
+                        self.check(&config, Access::Read)?;
+                        self.diary.reload_config();
+                    }
+                }
+                Ok(json!({"week_start": self.diary.config().week_start()}))
             }
         }
     }
